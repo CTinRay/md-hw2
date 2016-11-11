@@ -72,6 +72,7 @@ const std::vector<Real>&GibbsSampler::Chain::getVars() const {
 
 
 void GibbsSampler::Chain::step(){
+    // std::cout << "step" << std::endl;
     for (auto i = 0u; i < factorGraph.nVars; ++i ){
         assignment[i] = Label::positive;
         Real potentialP = factorGraph.evalAt(i, assignment);
@@ -133,11 +134,15 @@ std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
     }
 
     // start sampling
-    do {
+    for (auto&& chain: chains){
+        chain.iterate(10);
+    }
+
+    while (!isConverge(convergeRatio, chains)) {
         for (auto&& chain: chains){
             chain.iterate(1);
         }
-    }while (!isConverge(convergeRatio, chains));
+    };
 
 
     // average for result
