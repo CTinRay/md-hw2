@@ -1,6 +1,9 @@
 #include "factor-graph.hpp"
 #include "target-functions.hpp"
 
+#ifndef GIBBS_SAMPLER_HPP
+#define GIBBS_SAMPLER_HPP
+
 class GibbsSampler {
 private:
     const std::vector<TargetFunction>&targetFunctions;
@@ -32,3 +35,5 @@ public:
                                long double convergeRatio);
 };
 
+
+#endif

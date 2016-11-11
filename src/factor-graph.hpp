@@ -2,6 +2,8 @@
 #include "type.hpp"
 #include <vector>
 
+#ifndef FACTOR_GRAPH_HPP
+#define FACTOR_GRAPH_HPP
 
 class FactorGraph {    
 private:
@@ -12,7 +14,7 @@ private:
     std::vector<std::vector<Index>>varFactors;
     std::vector<Factor>factors;
     Real evalFactor(Index factorIndex,
-                    const std::vector<Label>&assignment);
+                    const std::vector<Label>&assignment) const;
 public:
     unsigned int nVars;
     FactorGraph(unsigned int nVars);
@@ -22,3 +24,4 @@ public:
                 const std::vector<Label>&assignment) const;
 };
 
+#endif

@@ -1,6 +1,9 @@
 #include "type.hpp"
 #include <vector>
 
+#ifndef FACTOR_FUNCTIONS_HPP
+#define FACTOR_FUNCTIONS_HPP
+
 // Virtual class that defines interface of FactorFunctions
 class FactorFunction{
 public:
@@ -46,3 +49,5 @@ class HFactorFunction: virtual FactorFunction{
     HFactorFunction(unsigned int ti);
     Real eval(const std::vector<Label>&args) const;    
 };
+
+#endif
