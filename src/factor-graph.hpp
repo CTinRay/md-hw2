@@ -5,7 +5,6 @@
 
 class FactorGraph {    
 private:
-    unsigned int nVars;
     struct Factor {
         const std::vector<Index>scope;
         const FactorFunction&function;
@@ -15,10 +14,11 @@ private:
     Real evalFactor(Index factorIndex,
                     const std::vector<Label>&assignment);
 public:
+    unsigned int nVars;
     FactorGraph(unsigned int nVars);
     void addFactor(const std::vector<Index>&scope,
                    const FactorFunction&factorFunction);
     Real evalAt(Index varIndex,
-                const std::vector<Label>&assignment);
+                const std::vector<Label>&assignment) const;
 };
 
