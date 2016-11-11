@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -Wall
+CXXFLAGS = -std=c++11 -Wall -O3
 DBGFLAGS = -g3
 
 OBJS = factor-graph.o factor-functions.o gibbs-sampler.o 
