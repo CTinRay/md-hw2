@@ -1,5 +1,6 @@
 #include "gibbs-sampler.hpp"
 #include <random>
+#include <iostream>
 
 #define SQUARE(X) (X) * (X)
 
@@ -19,7 +20,9 @@ GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
      nItered(0),
      assignment(std::vector<Label>(factorGraph.nVars)),
      sum(std::vector<Real>(targetFunctions.size(), RealAddId)),
-     squareSum(std::vector<Real>(targetFunctions.size(), RealAddId))
+     squareSum(std::vector<Real>(targetFunctions.size(), RealAddId)),
+     means(std::vector<Real>(targetFunctions.size())),
+     vars(std::vector<Real>(targetFunctions.size()))
 {
     srand(time(NULL));
     for (auto i = 0u; i < assignment.size(); ++i){
@@ -43,13 +46,13 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
             sum[j] += res;
             squareSum[j] += SQUARE(res);
         }
+        nItered += 1;
     }
     updateMeanVar();
 }
 
 
 void GibbsSampler::Chain::updateMeanVar(){
-    vars = std::vector<Real>(targetFunctions.size(), RealAddId);
     for (auto i = 0u; i < targetFunctions.size(); ++i) {
         means[i] = sum[i] / nItered;
         // Var = E(x^2) - (E(x))^2
@@ -130,22 +133,20 @@ std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
     }
 
     // start sampling
-    while (!isConverge(convergeRatio, chains)){
+    do {
         for (auto&& chain: chains){
             chain.iterate(1);
         }
-    }
+    }while (!isConverge(convergeRatio, chains));
+
 
     // average for result
     std::vector<Real>means(targetFunctions.size());
     for (auto&& chain: chains) {
         auto&m = chain.getMeans();
         for (auto i = 0u; i < means.size(); ++i) {
-            means[i] += m[i];
+            means[i] += m[i] / nChains;
         }
-    }
-    for (auto i = 0u; i < means.size(); ++i) {
-        means[i] /= nChains;
     }
                                                 
     return means;
