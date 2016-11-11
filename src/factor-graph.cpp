@@ -19,7 +19,7 @@ void FactorGraph::addFactor(const std::vector<Index>&scope,
 
 
 Real FactorGraph::evalFactor(Index factorIndex,
-                             const std::vector<Label>&assignment){
+                             const std::vector<Label>&assignment) const{
     std::vector<Label>args;
     for (auto varIndex: factors[factorIndex].scope) {
         args.push_back(assignment[varIndex]);
@@ -28,7 +28,7 @@ Real FactorGraph::evalFactor(Index factorIndex,
 }
 
 Real FactorGraph::evalAt(Index varIndex, 
-                         const std::vector<Label>&assignment){
+                         const std::vector<Label>&assignment) const{
     Real potential = RealMulId;
     for (auto varFactor: varFactors[varIndex]) {
         potential *= evalFactor(varFactor, assignment);
