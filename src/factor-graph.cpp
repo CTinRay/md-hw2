@@ -2,7 +2,8 @@
 #include <cassert>
 
 FactorGraph::FactorGraph(unsigned int nVars)
-    :nVars(nVars){}
+    :varFactors(std::vector<std::vector<Index>>(nVars)),
+     nVars(nVars){}
 
 
 void FactorGraph::addFactor(const std::vector<Index>&scope,
