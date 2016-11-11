@@ -14,16 +14,17 @@ private:
         std::vector<Real>means, vars;
         std::vector<std::vector<Real>>results;
         void step();
+        void updateMeanVar();
     public:
         Chain(const FactorGraph&factorGraph,
               const std::vector<TargetFunction>&targetFunctions);
         void init(unsigned int nIgnore);
         void iterate(unsigned int nIter);
-        const std::vector<Real>getMeans();
-        const std::vector<Real>getVars();
+        const std::vector<Real>&getMeans() const;
+        const std::vector<Real>&getVars() const;
     };
     bool isConverge(long double ratio,
-                       const std::vector<Chain>&chains);
+                    const std::vector<Chain>&chains);
 public:
     GibbsSampler(const std::vector<TargetFunction>&targetFunctions,
                  const FactorGraph&factorGraph);

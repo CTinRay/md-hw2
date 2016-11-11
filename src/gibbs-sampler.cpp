@@ -66,12 +66,12 @@ void GibbsSampler::Chain::updateMeanVar(){
 }    
 
 
-const std::vector<Real>&GibbsSampler::Chain::getMeans(){
+const std::vector<Real>&GibbsSampler::Chain::getMeans() const {
     return means;
 }
 
 
-const std::vector<Real>&GibbsSampler::Chain::getVars(){
+const std::vector<Real>&GibbsSampler::Chain::getVars() const {
     return vars;
 }
 
@@ -92,7 +92,41 @@ GibbsSampler::GibbsSampler(const std::vector<TargetFunction>&targetFunctions,
     :targetFunctions(targetFunctions),
      factorGraph(factorGraph){}
 
-   
+
+bool GibbsSampler::isConverge(long double convergeRatio,
+                              const std::vector<GibbsSampler::Chain>&chains){
+    std::vector<Real>interChainVars(targetFunctions.size());
+    std::vector<Real>intraChainVars(targetFunctions.size());
+
+    // mean of mean of chains
+    for (auto&&chain: chains) {
+        const auto&means = chain.getMeans();
+        for (auto i = 0u; i < means.size(); ++i) {
+            interChainVars[i] += means[i] / chains.size();
+        }
+    }
+
+    for (auto&&chain: chains) {
+        const auto&means = chain.getMeans();
+        // variance of mean of chains
+        for (auto i = 0u; i < means.size(); ++i) {
+            interChainVars[i] += SQUARE(means[i] - interChainVars[i]) / chains.size();
+        }
+        // average of variance of chains
+        for (auto i = 0u; i < means.size(); ++i) {
+            intraChainVars[i] += means[i] / chains.size();
+        }        
+    }
+
+    convergeRatio = SQUARE(convergeRatio);
+    for (auto i = 0u; i < intraChainVars.size(); ++i) {
+        if (interChainVars[i] / intraChainVars[i] > convergeRatio) {
+            return false;
+        }            
+    }
+    return true;
+}
+    
 std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
                                                 unsigned int nIgnore,
                                                 long double convergeRatio){
