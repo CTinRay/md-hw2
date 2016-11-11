@@ -1,6 +1,8 @@
 #include "gibbs-sampler.hpp"
 #include <random>
 
+#define SQUARE(X) (X) * (X)
+
 std::random_device rd;
 std::mt19937_64 gen(rd());    
 
@@ -15,8 +17,6 @@ GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
     :factorGraph(factorGraph),
      targetFunctions(targetFunctions),
      assignment(std::vector<Label>(factorGraph.nVars)),
-     means(std::vector<Real>(targetFunctions.size(), RealAddId)),
-     vars(std::vector<Real>(targetFunctions.size(), RealAddId)),
      results(targetFunctions.size(), std::vector<Real>())
 {
     srand(time(NULL));
@@ -40,6 +40,39 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
             results[j].push_back(targetFunctions[j].eval(assignment));
         }
     }
+    updateMeanVar();
+}
+
+
+void GibbsSampler::Chain::updateMeanVar(){
+    // Calculate mean
+    means = std::vector<Real>(targetFunctions.size(), RealAddId);
+    for (auto i = 0u; i < results.size(); ++i) {
+        for (auto res: results[i]) {
+            means[i] += res;
+        }
+        means[i] /= results[i].size();
+    }
+
+    // Calculate var
+    vars = std::vector<Real>(targetFunctions.size(), RealAddId);
+    for (auto i = 0u; i < results.size(); ++i) {
+        for (auto res: results[i]) {
+            means[i] += SQUARE(res - means[i]);
+        }
+        vars[i] /= results[i].size();
+    }
+    
+}    
+
+
+const std::vector<Real>&GibbsSampler::Chain::getMeans(){
+    return means;
+}
+
+
+const std::vector<Real>&GibbsSampler::Chain::getVars(){
+    return vars;
 }
 
 
@@ -59,7 +92,7 @@ GibbsSampler::GibbsSampler(const std::vector<TargetFunction>&targetFunctions,
     :targetFunctions(targetFunctions),
      factorGraph(factorGraph){}
 
-
+   
 std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
                                                 unsigned int nIgnore,
                                                 long double convergeRatio){
