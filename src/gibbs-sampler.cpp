@@ -13,7 +13,7 @@ Label rand(Real potenrialP, Real potenrialN){
 }
 
 GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
-                           const std::vector<TargetFunction>&targetFunctions)
+                           const std::vector<TargetFunction*>&targetFunctions)
     :factorGraph(factorGraph),
      targetFunctions(targetFunctions),
      nItered(0),
@@ -39,7 +39,7 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
     for (auto i = 0u; i < nIter; ++i) {
         step();
         for (auto j = 0u; j < targetFunctions.size(); ++j) {
-            Real res = targetFunctions[j].eval(assignment);
+            Real res = targetFunctions[j] -> eval(assignment);
             sum[j] += res;
             squareSum[j] += SQUARE(res);
         }
@@ -79,7 +79,7 @@ void GibbsSampler::Chain::step(){
 }
 
 
-GibbsSampler::GibbsSampler(const std::vector<TargetFunction>&targetFunctions,
+GibbsSampler::GibbsSampler(const std::vector<TargetFunction*>&targetFunctions,
                            const FactorGraph&factorGraph)
     :targetFunctions(targetFunctions),
      factorGraph(factorGraph){}
