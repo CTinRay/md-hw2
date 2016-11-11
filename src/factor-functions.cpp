@@ -5,14 +5,15 @@
 
 #define EXP expl
 
+std::vector<Real> FFactorFunction::alpha = std::vector<Real>(3, 1);
 
 FFactorFunction::FFactorFunction(const std::vector<Real>&features)
     :features(features){}
 
 Real FFactorFunction::eval(const std::vector<Label>&args) const{
     return EXP(args[0] * (alpha[0] * features[0] +
-                           alpha[1] * features[1] +
-                           alpha[2] * features[2] ) );
+                          alpha[1] * features[1] +
+                          alpha[2] * features[2] ) );
 }
 
 
@@ -23,6 +24,8 @@ Real GFactorFunction::eval(const std::vector<Label>&args) const{
     return EXP(beta * args[0] * args[1]);
 }
 
+
+Real HFactorFunction::gamma = 1;
 
 HFactorFunction::HFactorFunction(unsigned int ti)
     :ti(ti){};
