@@ -16,8 +16,10 @@ GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
                            const std::vector<TargetFunction>&targetFunctions)
     :factorGraph(factorGraph),
      targetFunctions(targetFunctions),
+     nItered(0),
      assignment(std::vector<Label>(factorGraph.nVars)),
-     results(targetFunctions.size(), std::vector<Real>())
+     sum(std::vector<Real>(targetFunctions.size(), RealAddId)),
+     squareSum(std::vector<Real>(targetFunctions.size(), RealAddId))
 {
     srand(time(NULL));
     for (auto i = 0u; i < assignment.size(); ++i){
@@ -37,7 +39,9 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
     for (auto i = 0u; i < nIter; ++i) {
         step();
         for (auto j = 0u; j < targetFunctions.size(); ++j) {
-            results[j].push_back(targetFunctions[j].eval(assignment));
+            Real res = targetFunctions[j].eval(assignment);
+            sum[j] += res;
+            squareSum[j] += SQUARE(res);
         }
     }
     updateMeanVar();
@@ -45,24 +49,12 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
 
 
 void GibbsSampler::Chain::updateMeanVar(){
-    // Calculate mean
-    means = std::vector<Real>(targetFunctions.size(), RealAddId);
-    for (auto i = 0u; i < results.size(); ++i) {
-        for (auto res: results[i]) {
-            means[i] += res;
-        }
-        means[i] /= results[i].size();
-    }
-
-    // Calculate var
     vars = std::vector<Real>(targetFunctions.size(), RealAddId);
-    for (auto i = 0u; i < results.size(); ++i) {
-        for (auto res: results[i]) {
-            means[i] += SQUARE(res - means[i]);
-        }
-        vars[i] /= results[i].size();
+    for (auto i = 0u; i < targetFunctions.size(); ++i) {
+        means[i] = sum[i] / nItered;
+        // Var = E(x^2) - (E(x))^2
+        vars[i] = squareSum[i] / nItered - SQUARE(means[i]);
     }
-    
 }    
 
 

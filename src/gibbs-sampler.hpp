@@ -11,8 +11,7 @@ private:
         const std::vector<TargetFunction>&targetFunctions;
         unsigned int nItered;
         std::vector<Label>assignment;        
-        std::vector<Real>means, vars;
-        std::vector<std::vector<Real>>results;
+        std::vector<Real>sum, squareSum, means, vars;
         void step();
         void updateMeanVar();
     public:
