@@ -1,16 +1,21 @@
-#include <vector>
-#include "type.hpp"
 #include "factor-functions.hpp"
+#include "type.hpp"
+#include <vector>
 
 
-class FactorGraph{
-public:
+class FactorGraph {    
+private:
     unsigned int nVars;
-    FactorGraph(unsigned int nVars);
-    std::vector<Index>varFactors;
-    void addFactor(const std::vector<unsigned int>&scope,
-                   const FactorFunction&factorFunction);
-                      
+    struct Factor {
+        const std::vector<Index>scope;
+        const FactorFunction&function;
+    };
+    std::vector<std::vector<Index>>varFactors;
+    std::vector<Factor>factors;
 
+public:
+    FactorGraph(unsigned int nVars);
+    void addFactor(const std::vector<Index>&scope,
+                   const FactorFunction&factorFunction);                     
 };
 
