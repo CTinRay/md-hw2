@@ -1,6 +1,6 @@
-#ifndef TYPE_H
 #include "type.hpp"
-#endif
+#include <vector>
+
 
 class TargetFunction {
 public:
