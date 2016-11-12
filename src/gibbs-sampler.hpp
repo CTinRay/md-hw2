@@ -10,10 +10,9 @@ private:
     const FactorGraph&factorGraph;
     class Chain{
     private:
-        const FactorGraph&factorGraph;
+        EvalGraph evalGraph;
         const std::vector<TargetFunction*>&targetFunctions;
         unsigned int nItered;
-        std::vector<Label>assignment;        
         std::vector<Real>sum, squareSum, means, vars;
         void step();
         void updateMeanVar();

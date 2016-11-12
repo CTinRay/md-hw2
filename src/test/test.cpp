@@ -55,8 +55,8 @@ public:
     TestFactorFunction1(){
     }
     
-    Real eval(const std::vector<Label>&args) const {
-        if (args[0] == Label::positive) {
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const {
+        if (*args[0] == Label::positive) {
             return 3;
         }
         else {
@@ -75,10 +75,10 @@ public:
         :matrix(matrix){
     }
     
-    Real eval(const std::vector<Label>&args) const {
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const {
         Index ind = 0;        
         for (unsigned int i = 0; i < args.size(); ++i) {
-            ind += pow(2, i) * (args[i] == positive ? 1 : 0);
+            ind += pow(2, i) * (*args[i] == positive ? 1 : 0);
         }
         return matrix[ind];
     }
@@ -123,7 +123,11 @@ bool test2(){
         if (std::abs(probs[0] - 0.3) > 0.01 ||
             std::abs(probs[1] - 0.5) > 0.01 ||
             std::abs(probs[2] - 0.15) > 0.01) {
-            std::cout << "(X) Fail test2" << std::endl;
+            std::cout << "(X) Fail test2 probs "
+                      << probs[0] << " "
+                      << probs[1] << " "
+                      << probs[2] << " "
+                      << std::endl;
             return false;
         }
     }
@@ -170,7 +174,7 @@ bool test3(){
 }
 
 bool test4(){
-    const unsigned int nVars = 10000000;
+    const unsigned int nVars = 10000;
 
     std::vector<Real>matrixT(4);
     matrixT[0] = 4;
@@ -222,8 +226,8 @@ int main(){
     // TestFactorFunction t;
     // std::vector<TestFactorFunction>ts;
     // graph.addFactor(args, t);
-    // test1();
-    // test2();
-    // test3();
+    test1();
+    test2();
+    test3();
     test4();
 }
