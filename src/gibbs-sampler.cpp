@@ -126,8 +126,9 @@ std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
     std::vector<Chain>chains(nChains, Chain(factorGraph, targetFunctions));
 
     // burn-in step
-    for (auto&& chain: chains) {
-        chain.init(nIgnore);
+#pragma omp parallel for
+    for (auto i = 0u; i < chains.size(); ++i) {
+        chains[i].init(nIgnore);
     }
 
     // start sampling
@@ -136,8 +137,9 @@ std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
     }
 
     while (!isConverge(convergeRatio, chains)) {
-        for (auto&& chain: chains){
-            chain.iterate(1);
+#pragma omp parallel for
+        for (auto i = 0u; i < chains.size(); ++i) {
+            chains[i].iterate(10);
         }
     };
 
