@@ -1,6 +1,5 @@
 #include "gibbs-sampler.hpp"
 #include <random>
-#include <iostream>
 
 #define SQUARE(X) (X) * (X)
 
@@ -15,18 +14,17 @@ Label rand(Real potenrialP, Real potenrialN){
 
 GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
                            const std::vector<TargetFunction*>&targetFunctions)
-    :factorGraph(factorGraph),
+    :evalGraph(factorGraph),
      targetFunctions(targetFunctions),
      nItered(0),
-     assignment(std::vector<Label>(factorGraph.nVars)),
      sum(std::vector<Real>(targetFunctions.size(), RealAddId)),
      squareSum(std::vector<Real>(targetFunctions.size(), RealAddId)),
      means(std::vector<Real>(targetFunctions.size())),
      vars(std::vector<Real>(targetFunctions.size()))
 {
     srand(time(NULL));
-    for (auto i = 0u; i < assignment.size(); ++i){
-        assignment[i] = (rand() & 1) == 0 ? Label::positive : Label::negative;
+    for (auto i = 0u; i < evalGraph.assignment.size(); ++i){
+        evalGraph.assignment[i] = rand(1, 1);
     }
 }
 
@@ -42,7 +40,7 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
     for (auto i = 0u; i < nIter; ++i) {
         step();
         for (auto j = 0u; j < targetFunctions.size(); ++j) {
-            Real res = targetFunctions[j] -> eval(assignment);
+            Real res = targetFunctions[j] -> eval(evalGraph.assignment);
             sum[j] += res;
             squareSum[j] += SQUARE(res);
         }
@@ -72,13 +70,12 @@ const std::vector<Real>&GibbsSampler::Chain::getVars() const {
 
 
 void GibbsSampler::Chain::step(){
-    // std::cout << "step" << std::endl;
-    for (auto i = 0u; i < factorGraph.nVars; ++i ){
-        assignment[i] = Label::positive;
-        Real potentialP = factorGraph.evalAt(i, assignment);
-        assignment[i] = Label::negative;
-        Real potentialN = factorGraph.evalAt(i, assignment);
-        assignment[i] = rand(potentialP, potentialN);
+    for (auto i = 0u; i < evalGraph.assignment.size(); ++i ){
+        evalGraph.assignment[i] = Label::positive;
+        Real potentialP = evalGraph.evalAt(i);
+        evalGraph.assignment[i] = Label::negative;
+        Real potentialN = evalGraph.evalAt(i);
+        evalGraph.assignment[i] = rand(potentialP, potentialN);
     }
 }
 
