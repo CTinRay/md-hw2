@@ -33,6 +33,23 @@ public:
 };
 
 
+class ZFunction: public TargetFunction{
+public:    
+    ZFunction(){}
+    
+    Real eval(const std::vector<Label>&sample) const{
+        int n1 = 0;
+        const Real f[] = {1, 6, 24, 64};
+        for (auto i = 0u; i < 3; ++i) {
+            if (sample[i] == Label::positive) {
+                n1 += 1;
+            }
+        }
+        return 1.0 / f[n1];
+    }
+};
+
+
 class TestFactorFunction1: public FactorFunction{
 public:
     TestFactorFunction1(){
@@ -115,7 +132,7 @@ bool test2(){
 }
 
 bool test3(){
-    FactorGraph graph(5);
+    FactorGraph graph(3);
     std::vector<Real>matrix(4);
     matrix[0] = 1;
     matrix[1] = 2;
@@ -135,11 +152,15 @@ bool test3(){
 
     std::vector<TargetFunction*>funcs;    
     funcs.push_back(new MarginalProb(0));
+    funcs.push_back(new ZFunction());
     for (int i = 0; i < 10; ++i ){
         GibbsSampler sampler(funcs, graph);
         auto probs = sampler.doSample(16, 100, 1.0001);
-        if (std::abs(probs[0] - (118.0 / 154.0)) > 0.01 ) {
-            std::cout << "(X) Fail test3: prob" << probs[0] << std::endl;
+        if (std::abs(probs[0] - (118.0 / 155.0)) > 0.01 ||
+            std::abs(probs[1] - 8.0 / 155.0) > 0.01) {
+            std::cout << "(X) Fail test3: prob"
+                      << probs[0] << " "
+                      << probs[1] << std::endl;
             return false;
         }
     }
