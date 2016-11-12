@@ -169,12 +169,61 @@ bool test3(){
     
 }
 
+bool test4(){
+    const unsigned int nVars = 10000000;
+
+    std::vector<Real>matrixT(4);
+    matrixT[0] = 4;
+    matrixT[1] = 1;
+    matrixT[2] = 1;
+    matrixT[3] = 4;
+    MatrixFactorFunction mfft(matrixT);
+
+    std::vector<Real>matrixP(2);
+    matrixP[0] = 1;
+    matrixP[1] = 3;
+    MatrixFactorFunction mffp(matrixP);
+
+    FactorGraph graph(nVars);
+    for (auto i = 0u; i < nVars - 1; ++i) {
+        std::vector<Index>scopeT(2);
+        scopeT[0] = i;
+        scopeT[1] = i + 1;
+        std::vector<Index>scopeP(1);
+        scopeP[0] = i;
+        graph.addFactor(scopeT, mfft);
+        graph.addFactor(scopeP, mffp);
+    }
+    std::vector<Index>scopeP(1);
+    scopeP[0] = nVars - 1;
+    graph.addFactor(scopeP, mffp);
+
+    std::vector<TargetFunction*>funcs;    
+    funcs.push_back(new MarginalProb(nVars - 1));
+    for (int i = 0; i < 1; ++i ){
+        GibbsSampler sampler(funcs, graph);
+        auto probs = sampler.doSample(8, 100, 1.0001);
+        // std::cout << probs[0] << std::endl;
+        if (std::abs(probs[0] - 0.89314982) > 0.01) {
+            std::cout << "(X) Fail test4: prob"
+                      << probs[0] << std::endl;
+            return false;
+        }
+    }
+    std::cout << "(O) Pass test4" << std::endl;
+    return true;
+
+    
+    return true;
+}
+    
 int main(){
     // std::vector<Index>args(1, 0);
     // TestFactorFunction t;
     // std::vector<TestFactorFunction>ts;
     // graph.addFactor(args, t);
-    test1();
-    test2();
-    test3();
+    // test1();
+    // test2();
+    // test3();
+    test4();
 }
