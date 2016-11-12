@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -Wall -O3 -march=corei7 -Ofast -flto -funroll-loops -fopenmp
+CXXFLAGS = -std=c++11 -Wall -O3 -march=corei7 -Ofast -flto  -funroll-loops -lpthread
 # CXXFLAGS = -std=c++11 -Wall
 DBGFLAGS = -g3
 

@@ -1,5 +1,6 @@
 #include "gibbs-sampler.hpp"
 #include <random>
+#include <thread>
 
 #define SQUARE(X) (X) * (X)
 
@@ -124,22 +125,27 @@ std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
                                                 unsigned int nIgnore,
                                                 long double convergeRatio){
     std::vector<Chain>chains(nChains, Chain(factorGraph, targetFunctions));
+    std::vector<std::thread>threads(chains.size());
 
-    // burn-in step
-#pragma omp parallel for
+    // burn-in step    
     for (auto i = 0u; i < chains.size(); ++i) {
-        chains[i].init(nIgnore);
+        threads[i] = std::thread(&Chain::init, &chains[i], nIgnore);
     }
-
+    for (auto&&thread: threads) {
+        thread.join();
+    }
+    
     // start sampling
     for (auto&& chain: chains){
         chain.iterate(10);
     }
 
     while (!isConverge(convergeRatio, chains)) {
-#pragma omp parallel for
         for (auto i = 0u; i < chains.size(); ++i) {
-            chains[i].iterate(10);
+            threads[i] = std::thread(&Chain::iterate, &chains[i], 10);
+        }
+        for (auto&&thread: threads) {
+            thread.join();
         }
     };
 
