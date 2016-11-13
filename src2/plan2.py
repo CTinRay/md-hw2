@@ -12,9 +12,11 @@ class Plan2:
     def iter(self, learning_rate=0.01):
         scores = self.weights * self.features        
         median = np.median(self.scores)
-        upper = self.features[np.where(scores > median)]
-        lower = self.features[np.where(scores < median)]
-        gradient = np.sum(upper, axis=0) - np.sum(lower, axis=0)
+        feature_upper = np.sum(self.features[np.where(scores > median)], axis=0)
+        feature_lower = np.sum(self.features[np.where(scores < median)], axis=0)
+        score_upper = np.sum(scores[np.where(scores > median)])
+        score_lower = np.sum(scores[np.where(scores < median)])
+        gradient = (feature_upper * score_lower - feature_lower * score_upper) / score_lower ** 2
         self.weights -= gradient * learning_rate
 
         
