@@ -1,18 +1,20 @@
 #include "construct.hpp"
 #include <fstream>
 #include <queue>
+#include <iostream>
 
 ConstructGraph::ConstructGraph()
     :userNum(0),
      itemNum(0),
      itemOwner(MAX_ITEM),
-     itemCategory(MAX_ITEM){};
+     itemCategory(MAX_ITEM),
+     neighbor(MAX_USER){};
 
 void ConstructGraph::BFS(Index start, int maxDistance) {
     std::queue<PairIndexInt> q;
     bool visit[userNum];
-    for (auto i: visit){
-        visit[i] = false;
+    for (auto &i: visit){
+        i = false;
     }
     
     q.push( PairIndexInt(start, 0) );
@@ -25,7 +27,7 @@ void ConstructGraph::BFS(Index start, int maxDistance) {
             break;
         }
         for (auto i: userRelation[k.first]) {
-            if (!visit[ userRelation[k.first][i] ]) {
+            if (!visit[i]) {
                 q.push( PairIndexInt(i, k.second + 1) );
                 neighbor[start][i] = k.second + 1;
                 visit[i] = true;
@@ -55,7 +57,7 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile, 
     userRelation.reserve(userNum);
     userItem.reserve(userNum);
     userCategory.reserve(userNum);
-    neighbor.reserve(userNum);
+    //neighbor.reserve(userNum);
 
     /* handle realation.txt */
     Index userIndex1, userIndex2;
@@ -92,10 +94,6 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile, 
                 has_category = true;
                 it.second += 1;
             }
-            /*if (userCategory[userIndex][it].first == categoryIndex) {
-                has_category = true;
-                userCategory[userIndex][it].second += 1;
-            }*/
         }
         if (!has_category) {
             userCategory[userIndex].push_back( Pair(categoryIndex, 1) );
@@ -127,8 +125,7 @@ void ConstructGraph::candidateFilter(int maxDistance){
 }
 
 void ConstructGraph::constructGraph(FactorGraph& graph, int maxDistance){
-    candidateFilter(maxDistance);
-    
+    candidateFilter(maxDistance); 
     for (auto c: candidate) {
         Real shortest = INFINITY;
         for (auto k: itemOwner[c.first.second]) {
