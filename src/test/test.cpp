@@ -1,5 +1,6 @@
 #include "../factor-functions.hpp"
 #include "../gibbs-sampler.hpp"
+#include "../construct.hpp"
 #include <iostream>
 #include <cmath>
 
@@ -220,7 +221,15 @@ bool test4(){
     
     return true;
 }
-    
+
+bool test5() {
+    FactorGraph graph(10000000);
+    ConstructGraph construct;
+    construct.insertData( "../valid/user.txt", "../valid/relation.txt", "../valid/message.txt" );
+    construct.constructGraph(graph, 3);
+    return true;
+}
+
 int main(){
     // std::vector<Index>args(1, 0);
     // TestFactorFunction t;
@@ -230,4 +239,5 @@ int main(){
     test2();
     test3();
     test4();
+    test5();
 }
