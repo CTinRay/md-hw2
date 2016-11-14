@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -Wall -O3 -mtune=core2 -Ofast -flto -funroll-loops 
+CXXFLAGS = -std=c++11 -Wall -O3 -mtune=core2 -Ofast -flto -funroll-loops -fopenmp 
 # CXXFLAGS = -std=c++11 -Wall
 DBGFLAGS = -g3
 

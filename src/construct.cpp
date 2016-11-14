@@ -2,71 +2,96 @@
 #include <fstream>
 #include <queue>
 #include <iostream>
+#include <cmath>
+#include <omp.h>
+
+#define GREATER_THAN_MAX_DISTANCE -1
+#define MAX_PREDICTION 600000
 
 ConstructGraph::ConstructGraph()
     :userNum(0),
      itemNum(0),
+     categoryNum(0),
      itemOwner(MAX_ITEM),
-     itemCategory(MAX_ITEM),
-     neighbor(MAX_USER){};
+     itemCategory(MAX_ITEM){};
 
-void ConstructGraph::BFS(Index start, int maxDistance) {
+int ConstructGraph::BFS(Index start, const int maxDistance, Index item) {
     std::queue<PairIndexInt> q;
     bool visit[userNum];
     for (auto &i: visit){
         i = false;
     }
     
+    for (auto owner: itemOwner[item]) {
+        if (start == owner) {
+            return 0;
+        }
+    }
     q.push( PairIndexInt(start, 0) );
-    neighbor[start][start] = 0;
+    // neighbor[start][start] = 0;
     visit[start] = true;
     while (!q.empty()) {
         PairIndexInt k = q.front();
         q.pop();
-        if (k.second > maxDistance) {
+        if (k.second + 1 > maxDistance) {
             break;
         }
         for (auto i: userRelation[k.first]) {
             if (!visit[i]) {
+                for (auto owner: itemOwner[item]) {
+                    if (i == owner) {
+                        return k.second + 1;
+                    }
+                }
                 q.push( PairIndexInt(i, k.second + 1) );
-                neighbor[start][i] = k.second + 1;
+                // neighbor[start][i] = k.second + 1;
                 visit[i] = true;
             }
         }
     }
+    return GREATER_THAN_MAX_DISTANCE;
 }
 
-void ConstructGraph::calculateDistance(int maxDistance) {
+/*void ConstructGraph::calculateDistance(int maxDistance) {
     for (auto start = 0u; start < userNum; ++start) {       
         BFS(start, maxDistance);
     }
-}
+}*/
 
 void ConstructGraph::insertData(std::string userFile, std::string relationFile, std::string messageFile){
-    /* open file */
     std::fstream userList, relationList, messageList;
-    userList.open(userFile, std::fstream::in);
-    relationList.open(relationFile, std::fstream::in);
-    messageList.open(messageFile, std::fstream::in);
     
     /* handle user.txt */
+    userList.open(userFile, std::fstream::in);
     Index userIndex;
     while (userList >> userIndex) {
         userNum++;
     }
-    userRelation.reserve(userNum);
-    userItem.reserve(userNum);
-    userCategory.reserve(userNum);
-    //neighbor.reserve(userNum);
+    userList.close();
+    
+    /* Assign size */
+    userRelation.resize(userNum);
+    userItem.resize(userNum);
+    userCategory.resize(userNum);
+    for (auto i = 0u; i < userNum; ++i) {
+        userCategory[i].resize(MAX_CATEGORY);
+        for (auto j = 0u; j < MAX_CATEGORY; ++j) {
+            userCategory[i][j] = 0;
+        }
+    }
+    neighbor.resize(userNum);
 
     /* handle realation.txt */
+    relationList.open(relationFile, std::fstream::in);
     Index userIndex1, userIndex2;
     while (relationList >> userIndex1 >> userIndex2) {
         userRelation[userIndex1].push_back(userIndex2);
         userRelation[userIndex2].push_back(userIndex1);
     }
-    
+    relationList.close();
+
     /* handle message.txt */
+    messageList.open(messageFile, std::fstream::in);
     std::set<Pair> itemCategorySet;
     for (auto i = 0u; i < MAX_CATEGORY; ++i) {
         categoryCount[i] = 0;
@@ -75,42 +100,106 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile, 
     Index itemIndex, categoryIndex;
     while (messageList >> userIndex >> itemIndex >> categoryIndex >> linkCount) {
         itemNum = ( itemNum < itemIndex ) ? itemIndex : itemNum;
+        categoryNum = ( categoryNum < categoryIndex ) ? categoryIndex : categoryNum;
+        userCategory[userIndex][categoryIndex]++; 
+        itemLinkCount[itemIndex] = linkCount;
 
-        if ( userItem[userIndex].find(itemIndex) != userItem[userIndex].end() ) {
+        if ( userItem[userIndex].find(itemIndex) == userItem[userIndex].end() ) {
             userItem[userIndex].insert(itemIndex);
         }
         
-        if ( itemOwner[itemIndex].find(userIndex) != itemOwner[itemIndex].end() ) {
+        if ( itemOwner[itemIndex].find(userIndex) == itemOwner[itemIndex].end() ) {
             itemOwner[itemIndex].insert(userIndex);
         }
          
-        if ( itemCategory[itemIndex].find(categoryIndex) != itemCategory[itemIndex].end() ) {
+        if ( itemCategory[itemIndex].find(categoryIndex) == itemCategory[itemIndex].end() ) {
             itemCategory[itemIndex].insert(categoryIndex);
         }
         
-        bool has_category = false;
-        for (auto &it: userCategory[userIndex]) {
-            if (it.first == categoryIndex) {
-                has_category = true;
-                it.second += 1;
-            }
-        }
-        if (!has_category) {
-            userCategory[userIndex].push_back( Pair(categoryIndex, 1) );
-        }
-        
-        if ( itemCategorySet.find( Pair(itemIndex, categoryIndex) ) != itemCategorySet.end() ) {
+        if ( itemCategorySet.find( Pair(itemIndex, categoryIndex) ) == itemCategorySet.end() ) {
             categoryCount[categoryIndex]++; 
             itemCategorySet.insert( Pair(itemIndex, categoryIndex) );
         }
+    }
+    messageList.close();
+    std::cout << "insertData finished" << std::endl;
+}
 
-        itemLinkCount[itemIndex] = linkCount;
+void userCategoryNormalization(std::vector<std::vector<double> >& userCategory,
+                               int* categoryCount, const Index categoryNum, const Index userNum) {
+    for (auto cat = 0u; cat < categoryNum; ++cat) {
+        double average = (Real) categoryCount[cat] / userNum;
+        double standardDeviation = 0;
+        for (auto user = 0u; user < userNum; ++user) {
+            standardDeviation += ( userCategory[user][cat] - average ) * ( userCategory[user][cat] - average );
+        }
+        standardDeviation = sqrt(standardDeviation); 
+        for (auto user = 0u; user < userNum; ++user) {
+            userCategory[user][cat] = ( userCategory[user][cat] - average ) / standardDeviation;
+        }
     }
 }
 
-void ConstructGraph::candidateFilter(int maxDistance){
+// Only consider candidates in pred.id since there are too many possible candidates.
+// Remove "neightbor" which used to store results of BFS due to memory consideration.
+//
+// Features: UF, IO, CP, ItemLinkCount, CaterogyInnerProduct
+void ConstructGraph::constructFeatures(const int maxDistance, std::string predFile, std::string outputFile) {  
+    /* Read and store links for prediction */
+    std::fstream pred;
+    pred.open(predFile, std::fstream::in); 
+    Index* user = new Index[MAX_PREDICTION];
+    Index* item = new Index[MAX_PREDICTION];
+    std::string questionmark;
+    int task = 0;
+    while( pred >> user[task] >> item[task] >> questionmark ) {
+        task++;
+    }
+    pred.close();
+
+    /* calculate usersDistance */
+    int* usersDistance = new int[MAX_PREDICTION];
+    int pass = 0;
+    #pragma omp parallel for num_threads(10)
+    for (auto i = 0; i < task; ++i) {
+        usersDistance[i] = BFS(user[i], maxDistance, item[i]);
+        pass = (usersDistance[i] != GREATER_THAN_MAX_DISTANCE) ? pass + 1 : pass;
+    }
+    std::cout << "Ratio within distance " << maxDistance << ": " << (double)pass / task << std::endl;
+    
+    /* calculate catergoryInnerProduct */
+    userCategoryNormalization(userCategory, categoryCount, categoryNum, userNum);
+    std::cout << "normalization finished" << std::endl;
+    Real* categoryInnerProduct = new Real[MAX_PREDICTION];
+    #pragma omp parallel for num_threads(10)
+    for (auto i = 0; i < task; ++i) {
+        categoryInnerProduct[i] = 0;
+        for (auto cat = 0u; cat < categoryNum; ++cat) {
+            for (auto owner: itemOwner[item[i]]) {
+                categoryInnerProduct[i] += userCategory[user[i]][cat] * userCategory[owner][cat];
+            }
+        }
+    }
+    
+    /* output features */
+    std::fstream output;
+    output.open(outputFile, std::fstream::out);
+    for (auto i = 0; i < task; ++i) {
+        Real UF = (usersDistance[i] == GREATER_THAN_MAX_DISTANCE || usersDistance[i] == 0) ? 0 : 1.0 / usersDistance[i];
+        Real IO = (usersDistance[i] == 0) ? 1 : 0;
+        Real CP = 0;
+        for (auto cat: itemCategory[item[i]]) {
+           CP += categoryCount[cat]; 
+        }
+        output << UF << ' ' << IO << ' ' << CP << ' ' << itemLinkCount[item[i]] << ' ' << categoryInnerProduct[i] << std::endl;
+    }
+}
+
+/*void ConstructGraph::candidateFilter(const int maxDistance){
     calculateDistance(maxDistance);
+    std::cout << "calculateDistance finished" << std::endl;
     Index scope = 0;
+    #pragma omp parallel for num_threads(10)
     for (auto i = 0u; i < userNum; ++i) {
         for (auto j = 0u; j < itemNum; ++j) {
             for(auto k: itemOwner[j]) {
@@ -122,10 +211,13 @@ void ConstructGraph::candidateFilter(int maxDistance){
             // TODO: inner product
         }
     }
-}
+    std::cout << "candidateNum: " << scope << std::endl; 
+}*/
 
-void ConstructGraph::constructGraph(FactorGraph& graph, int maxDistance){
+// Construct factor graph (remove in this version)
+/*void ConstructGraph::constructGraph(FactorGraph& graph, int maxDistance){
     candidateFilter(maxDistance); 
+    std::cout << "candidateFilter finished" << std::endl;
     for (auto c: candidate) {
         Real shortest = INFINITY;
         for (auto k: itemOwner[c.first.second]) {
@@ -135,7 +227,7 @@ void ConstructGraph::constructGraph(FactorGraph& graph, int maxDistance){
                 }
             }
         }
-        Real UF = 1.0 / shortest;
+        Real UF = ( shortest == 0 ) ? 1 : 1.0 / shortest;
         Real IO = ( shortest == 0 ) ? 1 : 0;
         Real CP = 0;
         for (auto i: itemCategory[c.first.second]) {
@@ -143,7 +235,7 @@ void ConstructGraph::constructGraph(FactorGraph& graph, int maxDistance){
         }
         std::vector<Index> scope = {c.second};
         std::vector<Real> features = {UF, IO, CP};
-        FFactorFunction fFactorFunction(features);
-        graph.addFactor( scope, fFactorFunction );
+        FFactorFunction *fFactorFunction = new FFactorFunction(features);
+        graph.addFactor( scope, *fFactorFunction );
     }
-}
+}*/
