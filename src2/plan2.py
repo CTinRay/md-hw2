@@ -10,32 +10,38 @@ class Plan2:
         self.prev_gradient = np.zeros(features.shape[1])
         
     def iteration(self, learning_rate=0.01, verbose=False, answer=None):
-        scores = np.sum(self.weights * self.features, axis=1)
+        weights_sum = np.sum(self.weights)
+        scores = np.exp(np.sum(self.weights * self.features, axis=1) / weights_sum)
         median = np.median(scores)
-        upper = np.where(scores > median)[0][-4000:]
-        lower = np.where(scores < median)[0][:4000]
+        upper = np.where(scores > median)[0]
+        lower = np.where(scores < median)[0]
 
         # upper = np.random.choice(upper, 20000)
         # lower = np.random.choice(lower, 20000)
 
         feature_upper = np.sum(self.features[upper], axis=0)
-        feature_lower = np.sum(self.features[lower], axis=0)        
+        feature_lower = np.sum(self.features[lower], axis=0)
         score_upper = np.sum(scores[upper])
         score_lower = np.sum(scores[lower])
-        weights_sum = np.sum(self.weights)
-        gradient = ((feature_upper * weights_sum - score_upper) -
-                    (feature_lower * weights_sum - score_lower))/ weights_sum**2
-        gradient = (gradient + self.prev_gradient) / 2
+        f_inner_u = np.sum(self.features[upper] * self.weights, axis=1).reshape(-1, 1)
+        f_inner_l = np.sum(self.features[lower] * self.weights, axis=1).reshape(-1, 1)
+        # print('little?',np.sum((self.features[upper] * weights_sum - f_inner_u) * scores[upper].reshape(-1, 1), axis=0) )
+        gradient = (np.sum((self.features[upper] * weights_sum - f_inner_u) * scores[upper].reshape(-1, 1), axis=0)
+                    / score_upper -
+                    np.sum((self.features[lower] * weights_sum - f_inner_l) * scores[lower].reshape(-1, 1), axis=0)
+                    / score_lower) / weights_sum**2
+        # gradient = (gradient + self.prev_gradient) / 2
+                    
         self.prev_gradient = gradient
         
         if verbose is True:
             print('|gradient| =', np.linalg.norm(gradient))
-            print('score_upper - scopre_lower =', (score_upper - score_lower) / sum(self.weights),
-                  'std_upper:', np.std(scores[upper]),
-                  'std_lower:', np.std(scores[lower]),
-                  'max_upper:', np.max(scores[upper]),
-                  'median:', np.median(scores),
-                  'min_lower:', np.min(scores[lower]) )
+            print('score_upper - scopre_lower =', (score_upper - score_lower))
+            #       'std_upper:', np.std(scores[upper]),
+            #       'std_lower:', np.std(scores[lower]),
+            #       'max_upper:', np.max(scores[upper]),
+            #       'median:', np.median(scores),
+            #       'min_lower:', np.min(scores[lower]) )
             print('weights:', self.weights)
             # print('gradient', gradient)
             if answer is not None:
@@ -72,7 +78,7 @@ def main():
     parser = argparse.ArgumentParser(description='===== PLAN II =====')
     parser.add_argument('features', type=str, help='features')
     parser.add_argument('output', type=str, help='output')
-    parser.add_argument('--converge', type=float, help='converge, default = 0.001')
+    parser.add_argument('--converge', type=float, help='converge, default = 0.001', default=0.001)
     parser.add_argument('--verbose', type=bool, help='verbose, default = False', default=False)    
     parser.add_argument('--learning_rate', type=float, help='learning rate, default = 0.01', default=0.001)    
     parser.add_argument('--answer', type=str, help='answer')    
@@ -90,7 +96,7 @@ def main():
     features = (features - features_mean) / (features_var) ** 0.5
     plan2 = Plan2(features)
     plan2.fit(learning_rate=args.learning_rate,
-              verbose=args.verbose, answer=answer)
+              verbose=args.verbose, answer=answer, converge=args.converge)
 
     f = open(args.output, 'w')
     ys = plan2.predict()
