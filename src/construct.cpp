@@ -146,4 +146,64 @@ void ConstructGraph::constructGraph(FactorGraph& graph, int maxDistance){
         FFactorFunction fFactorFunction(features);
         graph.addFactor( scope, fFactorFunction );
     }
+    GFactorFunction *OIFunc = new GFactorFunction(0);
+    GFactorFunction *FIFunc = new GFactorFunction(0);
+    GFactorFunction *FIFunc2 = new GFactorFunction(0);
+    GFactorFunction *CCFunc = new GFactorFunction(0);
+    for (auto i = 0u; i < userNum; ++i) {
+        for (auto j = 0u; j < userNum; ++j) {
+            for(auto k: userItem[j]) {
+                std::map<Pair, Index>::iterator it[2];
+                if((it[0] = candidate.find(Pair(i, k))) == candidate.end()){
+                    continue;
+                }
+                for(auto l: userItem[j]) {
+                    if(l <= k || (it[1] = candidate.find(Pair(i, l))) == candidate.end()){
+                        continue;
+                    }
+                    std::vector<Index> scope = {it[0]->second, it[1]->second};
+                    graph.addFactor(scope, *OIFunc);
+                    auto tmp = neighbor[i].find(j);
+                    if(tmp != neighbor[i].end() && tmp->second == 1){
+//                        graph.addFactor(scope, *FIFunc);
+                    }
+                }
+            }
+        }
+        for (auto k = 0u; k < itemNum; ++k) {
+            std::map<Pair, Index>::iterator it[2];
+            if((it[0] = candidate.find(Pair(i, k))) == candidate.end()){
+                continue;
+            }
+            bool friends = thereAreFriends(i, itemOwner[k]);
+            for (auto l = k; l < itemNum; ++l) {
+                if((it[1] = candidate.find(Pair(i, l))) == candidate.end()){
+                    continue;
+                }
+                bool samecategory = false;
+                for(auto c: itemCategory[k]){
+                    if(itemCategory[l].find(c) != itemCategory[l].end()){
+                        samecategory = true;
+                        break;
+                    }
+                }
+                std::vector<Index> scope = {it[0]->second, it[1]->second};
+                if(samecategory){
+                    graph.addFactor(scope, *CCFunc);
+                }
+                if(friends && thereAreFriends(i, itemOwner[l])){
+//                    graph.addFactor(scope, *FIFunc2);
+                }
+            }
+        }
+    }
+}
+bool ConstructGraph::thereAreFriends(Index i, std::set<Index>& userSet){
+    for(Index j: userSet){
+        auto tmp = neighbor[i].find(j);
+        if(tmp != neighbor[i].end() && tmp->second == 1){
+            return true;
+        }
+    }
+    return false;
 }
