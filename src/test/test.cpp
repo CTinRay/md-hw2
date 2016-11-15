@@ -33,13 +33,30 @@ public:
 };
 
 
+class ZFunction: public TargetFunction{
+public:    
+    ZFunction(){}
+    
+    Real eval(const std::vector<Label>&sample) const{
+        int n1 = 0;
+        const Real f[] = {1, 6, 24, 64};
+        for (auto i = 0u; i < 3; ++i) {
+            if (sample[i] == Label::positive) {
+                n1 += 1;
+            }
+        }
+        return 1.0 / f[n1];
+    }
+};
+
+
 class TestFactorFunction1: public FactorFunction{
 public:
     TestFactorFunction1(){
     }
     
-    Real eval(const std::vector<Label>&args) const {
-        if (args[0] == Label::positive) {
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const {
+        if (*args[0] == Label::positive) {
             return 3;
         }
         else {
@@ -58,10 +75,10 @@ public:
         :matrix(matrix){
     }
     
-    Real eval(const std::vector<Label>&args) const {
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const {
         Index ind = 0;        
         for (unsigned int i = 0; i < args.size(); ++i) {
-            ind += pow(2, i) * (args[i] == positive ? 1 : 0);
+            ind += pow(2, i) * (*args[i] == positive ? 1 : 0);
         }
         return matrix[ind];
     }
@@ -106,7 +123,11 @@ bool test2(){
         if (std::abs(probs[0] - 0.3) > 0.01 ||
             std::abs(probs[1] - 0.5) > 0.01 ||
             std::abs(probs[2] - 0.15) > 0.01) {
-            std::cout << "(X) Fail test2" << std::endl;
+            std::cout << "(X) Fail test2 probs "
+                      << probs[0] << " "
+                      << probs[1] << " "
+                      << probs[2] << " "
+                      << std::endl;
             return false;
         }
     }
@@ -115,7 +136,7 @@ bool test2(){
 }
 
 bool test3(){
-    FactorGraph graph(5);
+    FactorGraph graph(3);
     std::vector<Real>matrix(4);
     matrix[0] = 1;
     matrix[1] = 2;
@@ -135,11 +156,15 @@ bool test3(){
 
     std::vector<TargetFunction*>funcs;    
     funcs.push_back(new MarginalProb(0));
+    funcs.push_back(new ZFunction());
     for (int i = 0; i < 10; ++i ){
         GibbsSampler sampler(funcs, graph);
         auto probs = sampler.doSample(16, 100, 1.0001);
-        if (std::abs(probs[0] - (118.0 / 154.0)) > 0.01 ) {
-            std::cout << "(X) Fail test3: prob" << probs[0] << std::endl;
+        if (std::abs(probs[0] - (118.0 / 155.0)) > 0.01 ||
+            std::abs(probs[1] - 8.0 / 155.0) > 0.01) {
+            std::cout << "(X) Fail test3: prob"
+                      << probs[0] << " "
+                      << probs[1] << std::endl;
             return false;
         }
     }
@@ -148,6 +173,54 @@ bool test3(){
     
 }
 
+bool test4(){
+    const unsigned int nVars = 10000;
+
+    std::vector<Real>matrixT(4);
+    matrixT[0] = 4;
+    matrixT[1] = 1;
+    matrixT[2] = 1;
+    matrixT[3] = 4;
+    MatrixFactorFunction mfft(matrixT);
+
+    std::vector<Real>matrixP(2);
+    matrixP[0] = 1;
+    matrixP[1] = 3;
+    MatrixFactorFunction mffp(matrixP);
+
+    FactorGraph graph(nVars);
+    for (auto i = 0u; i < nVars - 1; ++i) {
+        std::vector<Index>scopeT(2);
+        scopeT[0] = i;
+        scopeT[1] = i + 1;
+        std::vector<Index>scopeP(1);
+        scopeP[0] = i;
+        graph.addFactor(scopeT, mfft);
+        graph.addFactor(scopeP, mffp);
+    }
+    std::vector<Index>scopeP(1);
+    scopeP[0] = nVars - 1;
+    graph.addFactor(scopeP, mffp);
+
+    std::vector<TargetFunction*>funcs;    
+    funcs.push_back(new MarginalProb(nVars - 1));
+    for (int i = 0; i < 1; ++i ){
+        GibbsSampler sampler(funcs, graph);
+        auto probs = sampler.doSample(8, 100, 1.0001);
+        // std::cout << probs[0] << std::endl;
+        if (std::abs(probs[0] - 0.89314982) > 0.01) {
+            std::cout << "(X) Fail test4: prob"
+                      << probs[0] << std::endl;
+            return false;
+        }
+    }
+    std::cout << "(O) Pass test4" << std::endl;
+    return true;
+
+    
+    return true;
+}
+    
 int main(){
     // std::vector<Index>args(1, 0);
     // TestFactorFunction t;
@@ -156,4 +229,5 @@ int main(){
     test1();
     test2();
     test3();
+    test4();
 }

@@ -18,21 +18,39 @@ void FactorGraph::addFactor(const std::vector<Index>&scope,
     }
 }
 
-
-Real FactorGraph::evalFactor(Index factorIndex,
-                             const std::vector<Label>&assignment) const{
-    std::vector<Label>args;
-    for (auto varIndex: factors[factorIndex].scope) {
-        args.push_back(assignment[varIndex]);
+EvalGraph::EvalGraph(const FactorGraph&factorGraph)
+    :factorGraph(factorGraph),
+     scopes(std::vector< std::vector<std::vector<Label>::iterator> >
+            (factorGraph.factors.size())),
+     assignment(std::vector<Label>(factorGraph.nVars))
+{    
+    
+    for (auto i = 0u; i < factorGraph.factors.size(); ++i) {
+        for (auto varInd: factorGraph.factors[i].scope) {
+            scopes[i].push_back(assignment.begin() + varInd);
+        }
     }
-    return factors[factorIndex].function.eval(args);
 }
 
-Real FactorGraph::evalAt(Index varIndex, 
-                         const std::vector<Label>&assignment) const{
+EvalGraph::EvalGraph(const EvalGraph&evalGraph)
+    :factorGraph(evalGraph.factorGraph),
+     scopes(std::vector< std::vector<std::vector<Label>::iterator> >
+            (factorGraph.factors.size())),
+     assignment(std::vector<Label>(factorGraph.nVars))
+{    
+    
+    for (auto i = 0u; i < factorGraph.factors.size(); ++i) {
+        for (auto varInd: factorGraph.factors[i].scope) {
+            scopes[i].push_back(assignment.begin() + varInd);
+        }
+    }
+}
+
+Real EvalGraph::evalAt(Index varIndex) const{
     Real potential = RealMulId;
-    for (auto varFactor: varFactors[varIndex]) {
-        potential *= evalFactor(varFactor, assignment);
+    for (auto varFactor: factorGraph.varFactors[varIndex]) {
+        potential *= factorGraph.factors[varFactor]
+            .function.eval(scopes[varFactor]);
     }
     return potential;
 }
