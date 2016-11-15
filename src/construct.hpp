@@ -39,6 +39,7 @@ public:
     ConstructGraph();
     void insertData(std::string userFile, std::string relationFile, std::string messageFile, std::string pagerankFile);
     void constructFeatures(const int maxDistance, std::string predFile, std::string outputFile);
+    void sampleCandidates(const int maxDistance, const int sampleNum, std::string outputFile);
     // void constructGraph(FactorGraph& graph, const int maxDistance);
 };
 

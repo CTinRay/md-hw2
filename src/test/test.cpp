@@ -227,7 +227,10 @@ bool test5() {
     ConstructGraph construct;
     construct.insertData( "./valid/user.txt", "./valid/relation.txt", "./valid/message.txt", "./valid/pagerank.txt" );
     // construct.constructGraph(graph, 3);
+    construct.sampleCandidates(4, 800000, "./valid/sample_pred.id");
+    std::cout << "sample finished" << std::endl;
     construct.constructFeatures(4, "./valid/pred.id" , "./valid/features.txt");
+    construct.constructFeatures(4, "./valid/sample_pred.id" , "./valid/sample_features.txt");
     std::cout << "(O) Pass test5" << std::endl;
     return true;
 }

@@ -1,13 +1,13 @@
 #include "construct.hpp"
 #include <fstream>
 #include <queue>
+#include <random>
 #include <iostream>
-#include <stdexcept>
 #include <cmath>
 #include <omp.h>
 
 #define GREATER_THAN_MAX_DISTANCE -1
-#define MAX_PREDICTION 600000
+#define MAX_PREDICTION 800000
 
 ConstructGraph::ConstructGraph()
     :userNum(0),
@@ -213,6 +213,32 @@ void ConstructGraph::constructFeatures(const int maxDistance, std::string predFi
                << itemOwnerPagerank << ' '
                << categoryInnerProduct[i] << std::endl;
     }
+    output.close();
+}
+
+// rd and gen have defined in gibbs_sampler
+std::random_device rd2;
+std::mt19937_64 gen2(rd2());
+
+Index randomIndex(const int maxIndex) {
+    std::uniform_int_distribution<Index> dis(0, maxIndex - 1);
+    return dis(gen2);
+}
+
+void ConstructGraph::sampleCandidates(const int maxDistance, const int sampleNum, std::string outputFile) {
+    std::ofstream output(outputFile);
+    for (auto i = 0; i < sampleNum; ++i) {
+        Index user = randomIndex(userNum);
+        while (userItem[user].size() == 0) {
+            user = randomIndex(userNum);
+        }
+        Index item = randomIndex(itemNum);
+        while (itemLinkCount[item] == 0) {
+            item = randomIndex(itemNum);
+        }
+        output << user << ' ' << item << ' ' << '?' << std::endl;
+    }
+    output.close();
 }
 
 /*void ConstructGraph::candidateFilter(const int maxDistance){
