@@ -216,7 +216,7 @@ void ConstructGraph::constructFeatures(const int maxDistance, std::string predFi
     output.close();
 }
 
-// rd and gen have defined in gibbs_sampler
+// rd and gen have been defined in gibbs_sampler
 std::random_device rd2;
 std::mt19937_64 gen2(rd2());
 
@@ -227,6 +227,7 @@ Index randomIndex(const int maxIndex) {
 
 void ConstructGraph::sampleCandidates(const int maxDistance, const int sampleNum, std::string outputFile) {
     std::ofstream output(outputFile);
+    #pragma omp parallel for num_threads(10)
     for (auto i = 0; i < sampleNum; ++i) {
         Index user = randomIndex(userNum);
         while (userItem[user].size() == 0) {
@@ -238,6 +239,7 @@ void ConstructGraph::sampleCandidates(const int maxDistance, const int sampleNum
         }
         output << user << ' ' << item << ' ' << '?' << std::endl;
     }
+    std::cout << "sample finished" << std::endl;
     output.close();
 }
 
