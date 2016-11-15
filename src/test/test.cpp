@@ -225,9 +225,9 @@ bool test4(){
 bool test5() {
     FactorGraph graph(10000000);
     ConstructGraph construct;
-    construct.insertData( "./test1/user.txt", "./test1/relation.txt", "./test1/message.txt" );
+    construct.insertData( "./valid/user.txt", "./valid/relation.txt", "./valid/message.txt", "./valid/pagerank.txt" );
     // construct.constructGraph(graph, 3);
-    construct.constructFeatures(4, "./test1/pred.id" , "./test1/features.txt");
+    construct.constructFeatures(4, "./valid/pred.id" , "./valid/features.txt");
     std::cout << "(O) Pass test5" << std::endl;
     return true;
 }

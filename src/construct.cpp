@@ -2,6 +2,7 @@
 #include <fstream>
 #include <queue>
 #include <iostream>
+#include <stdexcept>
 #include <cmath>
 #include <omp.h>
 
@@ -58,11 +59,10 @@ int ConstructGraph::BFS(Index start, const int maxDistance, Index item) {
     }
 }*/
 
-void ConstructGraph::insertData(std::string userFile, std::string relationFile, std::string messageFile){
-    std::fstream userList, relationList, messageList;
-    
+void ConstructGraph::insertData(std::string userFile, std::string relationFile,
+                                std::string messageFile ,std::string pagerankFile) {
     /* handle user.txt */
-    userList.open(userFile, std::fstream::in);
+    std::ifstream userList(userFile);
     Index userIndex;
     while (userList >> userIndex) {
         userNum++;
@@ -79,10 +79,11 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile, 
             userCategory[i][j] = 0;
         }
     }
-    neighbor.resize(userNum);
+    userPagerank.resize(userNum);
+    // neighbor.resize(userNum);
 
     /* handle realation.txt */
-    relationList.open(relationFile, std::fstream::in);
+    std::ifstream relationList(relationFile);
     Index userIndex1, userIndex2;
     while (relationList >> userIndex1 >> userIndex2) {
         userRelation[userIndex1].push_back(userIndex2);
@@ -91,7 +92,7 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile, 
     relationList.close();
 
     /* handle message.txt */
-    messageList.open(messageFile, std::fstream::in);
+    std::ifstream messageList(messageFile);
     std::set<Pair> itemCategorySet;
     for (auto i = 0u; i < MAX_CATEGORY; ++i) {
         categoryCount[i] = 0;
@@ -122,6 +123,14 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile, 
         }
     }
     messageList.close();
+
+    /* handle pagerank */
+    std::ifstream pagerank(pagerankFile);
+    std::string equalsign;
+    while (pagerank >> userIndex) {
+        pagerank >> equalsign >> userPagerank[userIndex];
+    }
+    pagerank.close();
     std::cout << "insertData finished" << std::endl;
 }
 
@@ -143,11 +152,11 @@ void userCategoryNormalization(std::vector<std::vector<double> >& userCategory,
 // Only consider candidates in pred.id since there are too many possible candidates.
 // Remove "neightbor" which used to store results of BFS due to memory consideration.
 //
-// Features: UF, IO, CP, ItemLinkCount, CaterogyInnerProduct
-void ConstructGraph::constructFeatures(const int maxDistance, std::string predFile, std::string outputFile) {  
+// Features: UserFriendship, ItemOwnership, CategoryPopularity, 
+//           itemLinkCount, # of items owned by the user, itemOwnerPagerank, caterogyInnerProduct
+void ConstructGraph::constructFeatures(const int maxDistance, std::string predFile, std::string outputFile) {
     /* Read and store links for prediction */
-    std::fstream pred;
-    pred.open(predFile, std::fstream::in); 
+    std::ifstream pred(predFile); 
     Index* user = new Index[MAX_PREDICTION];
     Index* item = new Index[MAX_PREDICTION];
     std::string questionmark;
@@ -180,10 +189,9 @@ void ConstructGraph::constructFeatures(const int maxDistance, std::string predFi
             }
         }
     }
-    
+
     /* output features */
-    std::fstream output;
-    output.open(outputFile, std::fstream::out);
+    std::ofstream output(outputFile);
     for (auto i = 0; i < task; ++i) {
         Real UF = (usersDistance[i] == GREATER_THAN_MAX_DISTANCE || usersDistance[i] == 0) ? 0 : 1.0 / usersDistance[i];
         Real IO = (usersDistance[i] == 0) ? 1 : 0;
@@ -191,7 +199,19 @@ void ConstructGraph::constructFeatures(const int maxDistance, std::string predFi
         for (auto cat: itemCategory[item[i]]) {
            CP += categoryCount[cat]; 
         }
-        output << UF << ' ' << IO << ' ' << CP << ' ' << itemLinkCount[item[i]] << ' ' << categoryInnerProduct[i] << std::endl;
+        Real itemOwnerPagerank = 0;
+        for (auto owner: itemOwner[item[i]]) {
+            itemOwnerPagerank += ( userPagerank[owner] * userPagerank[owner] );
+        }
+        itemOwnerPagerank = sqrt(itemOwnerPagerank);
+
+        output << UF << ' ' 
+               << IO << ' ' 
+               << CP << ' ' 
+               << itemLinkCount[item[i]] << ' '
+               << userItem[user[i]].size() << ' '
+               << itemOwnerPagerank << ' '
+               << categoryInnerProduct[i] << std::endl;
     }
 }
 

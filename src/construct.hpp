@@ -25,10 +25,11 @@ private:
     std::vector<std::set<Index> > itemOwner;
     std::vector<std::set<Index> > itemCategory;
     std::vector<std::vector<double> > userCategory;
+    std::vector<Real> userPagerank;
     int categoryCount[MAX_CATEGORY];
     int itemLinkCount[MAX_ITEM];
 
-    std::vector<std::map<Index, int> > neighbor;
+    // std::vector<std::map<Index, int> > neighbor;
     std::map<Pair, Index> candidate;  // Pair = (user, item)
 
     int BFS(Index start, const int maxDistance, Index item);
@@ -36,7 +37,7 @@ private:
     // void candidateFilter(int maxDistance);
 public:
     ConstructGraph();
-    void insertData(std::string userFile, std::string relationFile, std::string messageFile);
+    void insertData(std::string userFile, std::string relationFile, std::string messageFile, std::string pagerankFile);
     void constructFeatures(const int maxDistance, std::string predFile, std::string outputFile);
     // void constructGraph(FactorGraph& graph, const int maxDistance);
 };
