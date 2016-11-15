@@ -27,8 +27,8 @@ class Plan2:
         if verbose is True:
             print('|gradient| =', np.linalg.norm(gradient))
             print('score_upper / scopre_whole =', score_upper / score_whole)
-            print('weights:', self.weights)
-            print('gradient', gradient)
+            # print('weights:', self.weights)
+            # print('gradient', gradient)
             if answer is not None:
                 ys = self.predict()
                 print('accuracy:', np.sum(answer == ys) / ys.shape[0])
@@ -76,6 +76,9 @@ def main():
         answer = np.array(list(map(int, f.read().strip().split('\n'))), dtype=int)
         
     features = load_feature(args.features)[:,[0, 1, 2, 3, 4, 5, 6]]
+    features_mean = np.average(features, axis=0)
+    features_var = np.sum((features - features_mean)**2, axis=0)
+    features = (features - features_mean) / (features_var) ** 0.5
     plan2 = Plan2(features)
     plan2.fit(learning_rate=args.learning_rate,
               verbose=args.verbose, answer=answer)
