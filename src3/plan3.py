@@ -34,9 +34,11 @@ def main():
     features = (features - features_mean) / (features_var) ** 0.5
 
     # todo
-    ee = IsolationForest()
+    ee = IsolationForest(contamination=0.5, n_estimators=400, n_jobs=-1, max_samples=0.2)
     ee.fit(features)
-    ys = ee.predict()
+    ys = ee.predict(features)
+    ys[np.where(ys == 1)] = 0
+    ys[np.where(ys == -1)] = 1
 
     f = open(args.output, 'w')
     for y in ys:
