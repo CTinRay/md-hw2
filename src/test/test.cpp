@@ -3,7 +3,7 @@
 #include "../construct.hpp"
 #include <iostream>
 #include <cmath>
-
+#include <string>
 
 class MarginalProb: public TargetFunction{
 private:
@@ -223,14 +223,14 @@ bool test4(){
 }
 
 bool test5() {
+    std::string dirName = "./valid/";
     FactorGraph graph(10000000);
     ConstructGraph construct;
-    construct.insertData( "./valid/user.txt", "./valid/relation.txt", "./valid/message.txt", "./valid/pagerank.txt" );
+    construct.insertData( dirName + "user.txt", dirName + "relation.txt", dirName + ".message.txt", dirName + "pagerank.txt" );
     // construct.constructGraph(graph, 3);
-    construct.sampleCandidates(4, 800000, "./valid/sample_pred.id");
-    std::cout << "sample finished" << std::endl;
-    construct.constructFeatures(4, "./valid/pred.id" , "./valid/features.txt");
-    construct.constructFeatures(4, "./valid/sample_pred.id" , "./valid/sample_features.txt");
+    construct.sampleCandidates(4, 800000, dirName + "sample_pred.id");
+    construct.constructFeatures(4, dirName + "pred.id" , dirName + "features.txt");
+    construct.constructFeatures(4, dirName + "sample_pred.id" , dirName + "sample_features.txt");
     std::cout << "(O) Pass test5" << std::endl;
     return true;
 }
