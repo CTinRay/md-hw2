@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
-
+from sklearn.covariance import EllipticEnvelope 
+from sklearn.ensemble import IsolationForest
 
 def load_feature(filename):
     f = open(filename)
@@ -32,10 +33,12 @@ def main():
     features_var = np.sum((features - features_mean)**2, axis=0)
     features = (features - features_mean) / (features_var) ** 0.5
 
-    # todo 
+    # todo
+    ee = IsolationForest()
+    ee.fit(features)
+    ys = ee.predict()
 
     f = open(args.output, 'w')
-    ys = plan2.predict()
     for y in ys:
         f.write(str(int(y)) + '\n')
     print(np.sum(ys == answer) / ys.shape[0])
