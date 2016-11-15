@@ -7,27 +7,36 @@ class Plan2:
         self.features = features
         self.weights = np.empty(features.shape[1])
         self.weights.fill(1)
-
+        self.prev_gradient = np.zeros(features.shape[1])
         
     def iteration(self, learning_rate=0.01, verbose=False, answer=None):
         scores = np.sum(self.weights * self.features, axis=1)
         median = np.median(scores)
-        upper = np.where(scores > median)[0]
-        whole = np.arange(self.features.shape[0])
+        upper = np.where(scores > median)[0][-4000:]
+        lower = np.where(scores < median)[0][:4000]
 
-        upper = np.random.choice(upper, 1000)
-        whole = np.random.choice(whole, 2000)
+        # upper = np.random.choice(upper, 20000)
+        # lower = np.random.choice(lower, 20000)
 
         feature_upper = np.sum(self.features[upper], axis=0)
-        feature_whole = np.sum(self.features[whole], axis=0)        
+        feature_lower = np.sum(self.features[lower], axis=0)        
         score_upper = np.sum(scores[upper])
-        score_whole = np.sum(scores[whole])
-        gradient = (feature_upper * score_whole - feature_whole * score_upper) / score_whole ** 2
-
+        score_lower = np.sum(scores[lower])
+        weights_sum = np.sum(self.weights)
+        gradient = ((feature_upper * weights_sum - score_upper) -
+                    (feature_lower * weights_sum - score_lower))/ weights_sum**2
+        gradient = (gradient + self.prev_gradient) / 2
+        self.prev_gradient = gradient
+        
         if verbose is True:
             print('|gradient| =', np.linalg.norm(gradient))
-            print('score_upper / scopre_whole =', score_upper / score_whole)
-            # print('weights:', self.weights)
+            print('score_upper - scopre_lower =', (score_upper - score_lower) / sum(self.weights),
+                  'std_upper:', np.std(scores[upper]),
+                  'std_lower:', np.std(scores[lower]),
+                  'max_upper:', np.max(scores[upper]),
+                  'median:', np.median(scores),
+                  'min_lower:', np.min(scores[lower]) )
+            print('weights:', self.weights)
             # print('gradient', gradient)
             if answer is not None:
                 ys = self.predict()
@@ -75,7 +84,7 @@ def main():
         f = open(args.answer)
         answer = np.array(list(map(int, f.read().strip().split('\n'))), dtype=int)
         
-    features = load_feature(args.features)[:,[0, 1, 2, 3, 4, 5, 6]]
+    features = load_feature(args.features) #[:,[0, 1, 3, 4, 6]]
     features_mean = np.average(features, axis=0)
     features_var = np.sum((features - features_mean)**2, axis=0)
     features = (features - features_mean) / (features_var) ** 0.5
