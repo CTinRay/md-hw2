@@ -50,7 +50,8 @@ public:
 };
 
 // Factor function in the top layer of the three-layer graph in paper.
-class HFactorFunction: virtual FactorFunction{
+class HFactorFunction: public FactorFunction{
+public:
     static Real gamma;
     unsigned int ti;
     HFactorFunction(unsigned int ti);
