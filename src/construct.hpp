@@ -36,10 +36,14 @@ private:
     std::vector<Real> userPagerank;
     int categoryCount[MAX_CATEGORY];
     int itemLinkCount[MAX_ITEM];
+    
     std::map<Pair, Index> candidate;  // <(user, item), scope>
+    std::vector<std::vector<Pair> > candidateUserInfo; // (item, scope)
 
     int BFS(Index start, const int maxDistance, Index item, const int direction);
     bool theyAreFriends(Index i, Index j);
+    std::vector<Index>* getTheSameOwner(Index i1, Index i2);
+    bool haveTheSameCategory(Index i1, Index i2);
 public:
     ConstructGraph();
     void insertData(std::string userFile, std::string relationFile, std::string messageFile, std::string pagerankFile);

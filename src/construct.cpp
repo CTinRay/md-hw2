@@ -149,7 +149,7 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile,
         }
     }
     messageList.close();
-
+    
     /* handle pagerank */
     std::ifstream pagerank(pagerankFile);
     std::string equalsign;
@@ -278,17 +278,20 @@ void ConstructGraph::sampleCandidates(const int sampleNum, std::string outputFil
     output.close();
 }
 
-void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, std::string featuresFile){
-    /* insert candidates from pred.id */
+void insertCandidate(std::string predFile, const int userNum,
+                     std::map<Pair, Index>& candidate, std::vector<std::vector<Pair> >& candidateUserInfo) {
     std::ifstream pred(predFile);
     Index user, item, scope = 0;
     std::string questionmark;
+    candidateUserInfo.resize(userNum);
     while (pred >> user >> item >> questionmark) {
-        candidate[Pair(user, item)] = scope++;    
+        candidateUserInfo[user].push_back( Pair(item, scope) );
+        candidate[Pair(user, item)] = scope++;
     }
     pred.close();
-    
-    /* add FFactorFunction */
+}
+
+void addFFactorFunction(FactorGraph& graph, std::string featuresFile, std::map<Pair, Index>& candidate) {
     std::ifstream features(featuresFile);
     std::string featuresLine;
     for (auto c: candidate) {
@@ -305,11 +308,17 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
     }
     features.close();
     std::cout << "constructGraph layer1 finished" << std::endl;
+}
+
+void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, std::string featuresFile){
+    insertCandidate(predFile, userNum, candidate, candidateUserInfo);
+    addFFactorFunction(graph, featuresFile, candidate);
+    
     GFactorFunction *OIFunc = new GFactorFunction(0);
     GFactorFunction *FIFunc = new GFactorFunction(0);
 //    GFactorFunction *FIFunc2 = new GFactorFunction(0);
     GFactorFunction *CCFunc = new GFactorFunction(0);
-    for (auto i = 0u; i < userNum; ++i) {
+    /*for (auto i = 0u; i < userNum; ++i) {
         for (auto j = 0u; j < userNum; ++j) {
             bool friends = theyAreFriends(i, j);
             for(auto k: userItem[j]) {
@@ -329,8 +338,35 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
                 }
             }
         }
+    }*/
+    for (auto u = 0u; u < userNum; ++u) {
+        for (auto info1: candidateUserInfo[u]) {
+            for (auto info2: candidateUserInfo[u]) {
+                Index i1 = info1.first;
+                Index i2 = info2.first;
+                std::vector<Index>* theSameOwner = getTheSameOwner(i1, i2);
+                if (i2 <= i1 || theSameOwner->size() == 0) {
+                    delete theSameOwner;
+                    continue;
+                }
+                bool friendship = false;
+                for (auto owner: *theSameOwner) {
+                    if (theyAreFriends(u, owner)) {
+                        friendship = true;
+                        break;
+                    }
+                }
+                std::vector<Index> scopes = {info1.second, info2.second};
+                graph.addFactor(scopes, *OIFunc);
+                if (friendship) {
+                    graph.addFactor(scopes, *FIFunc);
+                }
+                delete theSameOwner;
+            }
+        }
     }
-    std::vector<Index> category2item[categoryNum];
+    std::cout << "add OIFunc and FIFunc finished" << std::endl;
+    /*std::vector<Index> category2item[categoryNum];
     for (Index k = 0u; k < itemNum; ++k) {
         for(Index c: itemCategory[k]){
             category2item[c].push_back(k);
@@ -352,6 +388,19 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
                 }
             }
         }
+    }*/
+    for (auto u = 0u; u < userNum; ++u) {
+        for (auto info1: candidateUserInfo[u]) {
+            for (auto info2: candidateUserInfo[u]) {
+                Index i1 = info1.first;
+                Index i2 = info2.first;
+                if (i2 <= i1 || !haveTheSameCategory(i1, i2)) {
+                    continue;
+                }
+                std::vector<Index> scopes = {info1.second, info2.second};
+                graph.addFactor(scopes, *CCFunc);
+            }
+        }
     }
     std::cout << "constructGraph finished" << std::endl;
 }
@@ -359,6 +408,25 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
 bool ConstructGraph::theyAreFriends(Index i, Index j){
     for(auto f: userRelation[i]){
         if(f == j){
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<Index>* ConstructGraph::getTheSameOwner(Index i1, Index i2) {
+    std::vector<Index>* theSameOwner = new std::vector<Index>;
+    for (auto owner1: itemOwner[i1]) {
+        if (userItem[owner1].find(i2) != userItem[owner1].end()) {
+            theSameOwner->push_back(owner1);
+        }
+    }
+    return theSameOwner;
+}
+
+bool ConstructGraph::haveTheSameCategory(Index i1, Index i2) {
+    for (auto cat1: itemCategory[i1]) {
+        if (itemCategory[cat1].find(i2) != itemCategory[cat1].end()) {
             return true;
         }
     }
