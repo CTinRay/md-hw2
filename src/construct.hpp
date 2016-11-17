@@ -34,7 +34,7 @@ private:
     void BFS(Index start, int maxDistance);
     void calculateDistance(int maxDistance);
     void candidateFilter(int maxDistance);
-    bool thereAreFriends(Index i, std::set<Index>& userSet);
+    bool theyAreFriends(Index i, Index j);
 public:
     ConstructGraph();
     void insertData(std::string userFile, std::string relationFile, std::string messageFile);
