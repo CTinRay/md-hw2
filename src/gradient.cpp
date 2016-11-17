@@ -5,154 +5,41 @@
 #include <ctime>
 #include <random>
 #include <algorithm>
-
+#include <cassert>
 
 std::random_device rd;
 std::mt19937_64 gen(rd());    
 
 
-class MarginalProb: public TargetFunction{
-public:    
-    Index varInd;
-    MarginalProb(Index varInd)
-        :varInd(varInd){}
-    Real eval(const EvalGraph&graph) const{
-        return graph.assignment[varInd] == Label::positive ? 1 : 0;
-    }    
-};
-
-
-class ExpectFactorF: public TargetFunction{
-private:
-    Index featureInd;
-    const std::vector<Index>&varHInds;
-    const std::vector<Index>&varLInds;
-    const Real phSum, plSum;
-public:    
-    ExpectFactorF(Index featureInd,Real phSum, Real plSum,
-                  const std::vector<Index>&varHInds,
-                  const std::vector<Index>&varLInds)
-        :featureInd(featureInd),
-         varHInds(varHInds),
-         varLInds(varLInds),
-         phSum(phSum),
-         plSum(plSum){}
+void updateWeights(long double rate,
+                   const std::vector<GFactorFunction*>&gfs,
+                   const std::vector<Real>&gradient){
+    unsigned int i = 0;
+    while (i < FFactorFunction::alpha.size()) {
+        FFactorFunction::alpha[i] += rate * gradient[i];
+        i += 1;
+    }
     
-    Real eval(const EvalGraph&graph) const{
-        unsigned int countH = 0, countL = 0;
-        for (auto ind: varHInds) {
-            if (graph.assignment[ind] == Label::positive) {
-                countH += 1;
-            }            
-        }
-        for (auto ind: varLInds) {
-            if (graph.assignment[ind] == Label::positive) {
-                countL += 1;
-            }            
-        }        
-        if (countH == 0 && countL == 0) {
-            return 0;
-        }
-        Real product = RealMulId;
-        for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
-            if (graph.factorGraph.factors[i].function.factorType == FactorType::f) {
-                const FFactorFunction*f =
-                    (const FFactorFunction*) &graph.factorGraph.factors[i].function;
-                product *= f -> evalF(featureInd, graph.scopes[i]);
-            }
-        }
-        return (countH * product) / phSum - (countL * product) / plSum ;
-    }    
-};
+    for (unsigned int j = 0; j < gfs.size(); ++j) {
+        gfs[j] -> beta += rate * gradient[i];
+        i += 1;
+    }
+
+    HFactorFunction::gamma += rate * gradient[i];
+    assert(i == gradient.size() - 1);
+}
 
 
-class ExpectFactorG: public TargetFunction{
-private:
-    GFactorFunction*function;
-    const std::vector<Index>&varHInds;
-    const std::vector<Index>&varLInds;
-    const Real phSum, plSum;
-public:    
-    ExpectFactorG(GFactorFunction*function,Real phSum, Real plSum,
-                  const std::vector<Index>&varHInds,
-                  const std::vector<Index>&varLInds)
-        :function(function),
-         varHInds(varHInds),
-         varLInds(varLInds),
-         phSum(phSum),
-         plSum(plSum){}
-    
-    Real eval(const EvalGraph&graph) const{
-        unsigned int countH = 0, countL = 0;
-        for (auto ind: varHInds) {
-            if (graph.assignment[ind] == Label::positive) {
-                countH += 1;
-            }            
-        }
-        for (auto ind: varLInds) {
-            if (graph.assignment[ind] == Label::positive) {
-                countL += 1;
-            }            
-        }        
-        if (countH == 0 && countL == 0) {
-            return 0;
-        }
-        Real product = RealMulId;
-        for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
-            if (&graph.factorGraph.factors[i].function == function) {
-                const FFactorFunction*g =
-                    (const FFactorFunction*) &graph.factorGraph.factors[i].function;
-                product *= g -> evalF(graph.scopes[i]);
-            }
-        }
-        return (countH * product) / phSum - (countL * product) / plSum ;
-    }    
-};
+long double norm(const std::vector<Real>&gradient) {
+    Real sum = RealAddId;
+    for (auto g: gradient) {
+        sum += g * g;
+    }
+    return std::sqrt((long double)sum);
+}
 
 
-class ExpectFactorH: public TargetFunction{
-private:
-    const std::vector<Index>&varHInds;
-    const std::vector<Index>&varLInds;
-    const Real phSum, plSum;
-public:    
-    ExpectFactorH(Real phSum, Real plSum,
-                  const std::vector<Index>&varHInds,
-                  const std::vector<Index>&varLInds)
-        :varHInds(varHInds),
-         varLInds(varLInds),
-         phSum(phSum),
-         plSum(plSum){}
-    
-    Real eval(const EvalGraph&graph) const{
-        unsigned int countH = 0, countL = 0;
-        for (auto ind: varHInds) {
-            if (graph.assignment[ind] == Label::positive) {
-                countH += 1;
-            }            
-        }
-        for (auto ind: varLInds) {
-            if (graph.assignment[ind] == Label::positive) {
-                countL += 1;
-            }            
-        }        
-        if (countH == 0 && countL == 0) {
-            return 0;
-        }
-        Real product = RealMulId;
-        for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
-            if (graph.factorGraph.factors[i].function.factorType == FactorType::h) {
-                const FFactorFunction*g =
-                    (const FFactorFunction*) &graph.factorGraph.factors[i].function;
-                product *= g -> evalF(graph.scopes[i]);
-            }
-        }
-        return (countH * product) / phSum - (countL * product) / plSum ;
-    }    
-};
-
-
-void gradient(unsigned int batchSize, Real rate, Real converge, const FactorGraph&factorGraph) {
+void gradientAscend(unsigned int batchSize, long double rate, Real converge, const FactorGraph&factorGraph) {
     std::vector<TargetFunction*>marginalProbs;
     for (Index i = 0; i < factorGraph.nVars; ++i) {
         marginalProbs.push_back(new MarginalProb(i));
@@ -218,8 +105,9 @@ void gradient(unsigned int batchSize, Real rate, Real converge, const FactorGrap
         GibbsSampler gradientSampler(batch, factorGraph);
         auto gradient = gradientSampler.doSample(16, 100, 1.001);
 
-        
-        
+        updateWeights(rate, gFactorFunctions, gradient);
+        gradientNorm = norm(gradient);
+            
     } while (gradientNorm > converge);
     
 }
