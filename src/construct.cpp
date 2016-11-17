@@ -37,6 +37,7 @@ int ConstructGraph::BFS(Index start, const int maxDistance, Index item, const in
         if (k.second + 1 > maxDistance) {
             break;
         }
+        // TODO: simiplify
         if (direction == DIRECTED || direction == UNDIRECTED) {
             for (auto i: userRelation[k.first]) {
                 if (!visit[i]) {
@@ -69,9 +70,9 @@ int ConstructGraph::BFS(Index start, const int maxDistance, Index item, const in
 
 void userCategoryNormalization(std::vector<std::vector<double> >& userCategory, std::vector<std::set<Index> >& userItem,
                                int* categoryCount, const Index categoryNum, const Index userNum) {
-    for (auto cat = 0u; cat < categoryNum; ++cat) {
-        /* normalization */
-        /*double average = (Real) categoryCount[cat] / userNum;
+    /* normalization */
+    /*for (auto cat = 0u; cat < categoryNum; ++cat) {
+        double average = (Real) categoryCount[cat] / userNum;
         double standardDeviation = 0;
         for (auto user = 0u; user < userNum; ++user) {
             standardDeviation += ( userCategory[user][cat] - average ) * ( userCategory[user][cat] - average );
@@ -79,10 +80,16 @@ void userCategoryNormalization(std::vector<std::vector<double> >& userCategory, 
         standardDeviation = sqrt(standardDeviation); 
         for (auto user = 0u; user < userNum; ++user) {
             userCategory[user][cat] = ( userCategory[user][cat] - average ) / standardDeviation;
-        }*/
-        for (auto user = 0u; user < userNum; ++user) {
-            if (userItem[user].size() > 0) {
-                userCategory[user][cat] = userCategory[user][cat] / userItem[user].size();
+        }
+    }*/
+    for (auto user = 0u; user < userNum; ++user) {
+        if (userItem[user].size() > 0) {
+            int total = 0;
+            for (auto cat = 0u; cat < categoryNum; ++cat) {
+                total += userCategory[user][cat];
+            }
+            for (auto cat = 0u; cat < categoryNum; ++cat) {
+                userCategory[user][cat] = userCategory[user][cat] / total;
             }
         }
     }
@@ -242,11 +249,11 @@ void ConstructGraph::constructFeatures(const int maxDistance, const int directio
                // << itemOwnerPagerank << ' '
                << categoryInnerProduct[i] << std::endl;
     }
-    std::cout << "average userFriendNum: " << (double)totalUFN / task << std::endl;
-    // std::cout << "average ownerFriendNum: " << (double)totalOFN / task << std::endl;
-    // std::cout << "average perFriendLinkCount: " << (double)totalPFLC / task << std::endl;
-    std::cout << "average OwnedNum: " << (double)totalOwnedNum / task << std::endl;
-    std::cout << "average CIP: " << (double)totalCIP / task << std::endl;
+    std::cout << "average userFriendNum: " << totalUFN / task << std::endl;
+    // std::cout << "average ownerFriendNum: " << totalOFN / task << std::endl;
+    // std::cout << "average perFriendLinkCount: " << totalPFLC / task << std::endl;
+    std::cout << "average OwnedNum: " << totalOwnedNum / task << std::endl;
+    std::cout << "average CIP: " << totalCIP / task << std::endl;
     output.close();
 
     delete[] user;
