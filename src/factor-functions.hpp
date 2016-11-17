@@ -9,6 +9,7 @@ class FactorFunction{
 public:
     virtual Real eval(const std::vector<std::vector<Label>::iterator>&args)
         const = 0;
+    FactorType factorType;
 };
 
 
@@ -28,7 +29,8 @@ public:
     static std::vector<Real>alpha;
     const std::vector<Real>features;
     FFactorFunction(const std::vector<Real>&features);
-    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;
+    const FactorType factorType = FactorType::f;
 };
 
 // Factor function in the middle layer of the three-layer graph in paper.
@@ -41,6 +43,7 @@ public:
     Real beta;
     GFactorFunction(Real beta);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    const FactorType factorType = FactorType::g;
 };
 
 // Factor function in the top layer of the three-layer graph in paper.
@@ -48,7 +51,8 @@ class HFactorFunction: virtual FactorFunction{
     static Real gamma;
     unsigned int ti;
     HFactorFunction(unsigned int ti);
-    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;
+    const FactorType Factors = FactorType::h;
 };
 
 #endif
