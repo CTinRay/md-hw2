@@ -16,12 +16,21 @@ Real FFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args)
                           alpha[2] * features[2] ) );
 }
 
+Real FFactorFunction::evalF(Index i, const std::vector<std::vector<Label>::iterator>&args) const{
+    return *args[0] * features[i];
+}
+
 
 GFactorFunction::GFactorFunction(Real beta)
     :beta(beta){}
 
 Real GFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args) const{
     return EXP(beta * *args[0] * *args[1]);
+}
+
+Real GFactorFunction::evalF(Index i,
+                            const std::vector<std::vector<Label>::iterator>&args) const{
+    return *args[0] * *args[1];
 }
 
 
@@ -36,4 +45,13 @@ Real HFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args)
         count += *args[i] == 1 ? 1 : 0;
     }
     return EXP(gamma * (ti - count) * (ti - count));
+}
+
+
+Real HFactorFunction::evalF(const std::vector<std::vector<Label>::iterator>&args) const{
+    unsigned int count = 0;
+    for (unsigned int i = 0; i < args.size(); ++i ){
+        count += *args[i] == 1 ? 1 : 0;
+    }
+    return EXP((ti - count) * (ti - count));
 }

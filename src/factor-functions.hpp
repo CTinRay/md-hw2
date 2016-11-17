@@ -30,6 +30,7 @@ public:
     const std::vector<Real>features;
     FFactorFunction(const std::vector<Real>&features);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;
+    Real evalF(Index i, const std::vector<std::vector<Label>::iterator>&args) const;
     const FactorType factorType = FactorType::f;
 };
 
@@ -43,6 +44,8 @@ public:
     Real beta;
     GFactorFunction(Real beta);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real evalF(Index i,
+               const std::vector<std::vector<Label>::iterator>&args) const;    
     const FactorType factorType = FactorType::g;
 };
 
@@ -52,6 +55,7 @@ class HFactorFunction: virtual FactorFunction{
     unsigned int ti;
     HFactorFunction(unsigned int ti);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;
+    Real evalF(const std::vector<std::vector<Label>::iterator>&args) const;
     const FactorType Factors = FactorType::h;
 };
 

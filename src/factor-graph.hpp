@@ -13,8 +13,8 @@ private:
         const FactorFunction&function;
     };
     std::vector<std::vector<Index> >varFactors;
-    std::vector<Factor>factors;
 public:
+    std::vector<Factor>factors;
     unsigned int nVars;
     FactorGraph(unsigned int nVars);
     void addFactor(const std::vector<Index>&scope,
@@ -24,9 +24,9 @@ public:
 
 class EvalGraph {
 private:
-    const FactorGraph&factorGraph;
-    std::vector< std::vector<std::vector<Label>::iterator> >scopes;
 public:
+    std::vector< std::vector<std::vector<Label>::iterator> >scopes;
+    const FactorGraph&factorGraph;
     std::vector<Label>assignment;
     EvalGraph(const FactorGraph&factorGraph);
     EvalGraph(const EvalGraph&graph);    
