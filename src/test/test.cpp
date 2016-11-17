@@ -222,20 +222,19 @@ bool test4(){
     return true;
 }
 
-bool test5() {
-    std::string dirName = "./valid/";
-    FactorGraph graph(10000000);
+bool test5(std::string dirName, int maxDistance) {
+    FactorGraph graph(1000000);
     ConstructGraph construct;
-    construct.insertData( dirName + "user.txt", dirName + "relation.txt", dirName + ".message.txt", dirName + "pagerank.txt" );
-    // construct.constructGraph(graph, 3);
-    construct.sampleCandidates(4, 800000, dirName + "sample_pred.id");
-    construct.constructFeatures(4, dirName + "pred.id" , dirName + "features.txt");
-    construct.constructFeatures(4, dirName + "sample_pred.id" , dirName + "sample_features.txt");
+    construct.insertData( dirName + "user.txt", dirName + "relation.txt", dirName + "message.txt", dirName + "pagerank.txt" );
+    construct.sampleCandidates(50000, dirName + "sample_pred.id");
+    construct.constructFeatures(maxDistance, DIRECTED, dirName + "pred.id" , dirName + "features.txt");
+    construct.constructFeatures(maxDistance, DIRECTED, dirName + "sample_pred.id" , dirName + "sample_features.txt");
+    construct.constructGraph(graph, dirName + "pred.id", dirName + "features.txt");
     std::cout << "(O) Pass test5" << std::endl;
     return true;
 }
 
-int main(){
+int main(int argc, char* argv[]){
     // std::vector<Index>args(1, 0);
     // TestFactorFunction t;
     // std::vector<TestFactorFunction>ts;
@@ -244,5 +243,11 @@ int main(){
     // test2();
     // test3();
     // test4();
-    test5();
+    std::string dirName(argv[1]);
+    dirName = dirName + '/';
+    int maxDistance = 3;
+    if (argc == 3) {
+        maxDistance = std::stoi(argv[2]);
+    }
+    test5(dirName, maxDistance);
 }
