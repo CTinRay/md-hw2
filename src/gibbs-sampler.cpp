@@ -40,7 +40,7 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
     for (auto i = 0u; i < nIter; ++i) {
         step();
         for (auto j = 0u; j < targetFunctions.size(); ++j) {
-            Real res = targetFunctions[j] -> eval(evalGraph.assignment);
+            Real res = targetFunctions[j] -> eval(evalGraph);
             sum[j] += res;
             squareSum[j] += SQUARE(res);
         }

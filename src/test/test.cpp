@@ -13,8 +13,8 @@ public:
         
     }
 
-    Real eval(const std::vector<Label>&sample) const{
-        return sample[varInd] == Label::positive ? 1 : 0;
+    Real eval(const EvalGraph&graph) const{
+        return graph.assignment[varInd] == Label::positive ? 1 : 0;
     }
 };
 
@@ -26,9 +26,9 @@ public:
         :varInd1(varInd1),
          varInd2(varInd2){}
 
-    Real eval(const std::vector<Label>&sample) const{
-        return (sample[varInd1] == Label::positive &&
-                sample[varInd2] == Label::positive) ? 1 : 0;
+    Real eval(const EvalGraph&graph) const{
+        return (graph.assignment[varInd1] == Label::positive &&
+                graph.assignment[varInd2] == Label::positive) ? 1 : 0;
     }
 };
 
@@ -37,11 +37,11 @@ class ZFunction: public TargetFunction{
 public:    
     ZFunction(){}
     
-    Real eval(const std::vector<Label>&sample) const{
+    Real eval(const EvalGraph&graph) const{
         int n1 = 0;
         const Real f[] = {1, 6, 24, 64};
         for (auto i = 0u; i < 3; ++i) {
-            if (sample[i] == Label::positive) {
+            if (graph.assignment[i] == Label::positive) {
                 n1 += 1;
             }
         }

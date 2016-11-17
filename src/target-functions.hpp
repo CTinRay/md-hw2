@@ -1,4 +1,5 @@
 #include "type.hpp"
+#include "factor-graph.hpp"
 #include <vector>
 
 #ifndef TARGET_FUNCTIONS_HPP
@@ -6,7 +7,7 @@
 
 class TargetFunction {
 public:
-    virtual Real eval(const std::vector<Label>&sample) const = 0;
+    virtual Real eval(const EvalGraph&graph) const = 0;
 };
 
 #endif
