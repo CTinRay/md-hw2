@@ -39,6 +39,7 @@ private:
     std::map<Pair, Index> candidate;  // <(user, item), scope>
 
     int BFS(Index start, const int maxDistance, Index item, const int direction);
+    bool theyAreFriends(Index i, Index j);
 public:
     ConstructGraph();
     void insertData(std::string userFile, std::string relationFile, std::string messageFile, std::string pagerankFile);

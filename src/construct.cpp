@@ -304,5 +304,63 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
         graph.addFactor( scopes, *fFactorFunction );
     }
     features.close();
+    std::cout << "constructGraph layer1 finished" << std::endl;
+    GFactorFunction *OIFunc = new GFactorFunction(0);
+    GFactorFunction *FIFunc = new GFactorFunction(0);
+//    GFactorFunction *FIFunc2 = new GFactorFunction(0);
+    GFactorFunction *CCFunc = new GFactorFunction(0);
+    for (auto i = 0u; i < userNum; ++i) {
+        for (auto j = 0u; j < userNum; ++j) {
+            bool friends = theyAreFriends(i, j);
+            for(auto k: userItem[j]) {
+                std::map<Pair, Index>::iterator it[2];
+                if((it[0] = candidate.find(Pair(i, k))) == candidate.end()){
+                    continue;
+                }
+                for(auto l: userItem[j]) {
+                    if(l <= k || (it[1] = candidate.find(Pair(i, l))) == candidate.end()){
+                        continue;
+                    }
+                    std::vector<Index> scope = {it[0]->second, it[1]->second};
+                    graph.addFactor(scope, *OIFunc);
+                    if(friends){
+                        graph.addFactor(scope, *FIFunc);
+                    }
+                }
+            }
+        }
+    }
+    std::vector<Index> category2item[categoryNum];
+    for (Index k = 0u; k < itemNum; ++k) {
+        for(Index c: itemCategory[k]){
+            category2item[c].push_back(k);
+        }
+    }
+    for(Index c = 0; c < categoryNum; c++){
+        std::map<Pair, Index>::iterator it[2];
+        for(Index u = 0; u < userNum; u++){
+            for(Index i = 0; i < category2item[c].size(); i++){
+                if((it[0] = candidate.find(Pair(u, i))) == candidate.end()){
+                    continue;
+                }
+                for(Index j = i; j < category2item[c].size(); j++){
+                    if((it[1] = candidate.find(Pair(u, j))) == candidate.end()){
+                        continue;
+                    }
+                    std::vector<Index> scope = {it[0]->second, it[1]->second};
+                    graph.addFactor(scope, *CCFunc);
+                }
+            }
+        }
+    }
     std::cout << "constructGraph finished" << std::endl;
+}
+
+bool ConstructGraph::theyAreFriends(Index i, Index j){
+    for(auto f: userRelation[i]){
+        if(f == j){
+            return true;
+        }
+    }
+    return false;
 }
