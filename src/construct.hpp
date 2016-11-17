@@ -41,6 +41,8 @@ private:
     std::vector<std::vector<Pair> > candidateUserInfo; // (item, scope)
 
     int BFS(Index start, const int maxDistance, Index item, const int direction);
+    void addFFactorFunction(FactorGraph& graph, std::string featuresFile);
+    void addGFactorFunction(FactorGraph& graph);
     bool theyAreFriends(Index i, Index j);
     std::vector<Index>* getTheSameOwner(Index i1, Index i2);
     bool haveTheSameCategory(Index i1, Index i2);

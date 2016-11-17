@@ -37,7 +37,6 @@ int ConstructGraph::BFS(Index start, const int maxDistance, Index item, const in
         if (k.second + 1 > maxDistance) {
             break;
         }
-        // TODO: simiplify
         if (direction == DIRECTED || direction == UNDIRECTED) {
             for (auto i: userRelation[k.first]) {
                 if (!visit[i]) {
@@ -70,18 +69,6 @@ int ConstructGraph::BFS(Index start, const int maxDistance, Index item, const in
 
 void userCategoryNormalization(std::vector<std::vector<double> >& userCategory, std::vector<std::set<Index> >& userItem,
                                int* categoryCount, const Index categoryNum, const Index userNum) {
-    /* normalization */
-    /*for (auto cat = 0u; cat < categoryNum; ++cat) {
-        double average = (Real) categoryCount[cat] / userNum;
-        double standardDeviation = 0;
-        for (auto user = 0u; user < userNum; ++user) {
-            standardDeviation += ( userCategory[user][cat] - average ) * ( userCategory[user][cat] - average );
-        }
-        standardDeviation = sqrt(standardDeviation); 
-        for (auto user = 0u; user < userNum; ++user) {
-            userCategory[user][cat] = ( userCategory[user][cat] - average ) / standardDeviation;
-        }
-    }*/
     for (auto user = 0u; user < userNum; ++user) {
         if (userItem[user].size() > 0) {
             int total = 0;
@@ -165,17 +152,13 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile,
     }
     pagerank.close();
 
-    std::cout << "insertData finished" << std::endl;
     userCategoryNormalization(userCategory, userItem, categoryCount, categoryNum, userNum);
-    std::cout << "userCategory normalization finished" << std::endl;
+    std::cout << "insertData finished" << std::endl;
 }
 
 // Only consider candidates in pred.id since there are too many possible candidates.
-// Remove "neightbor" which used to store results of BFS due to memory consideration.
-//
-// Features: UserFriendship, ItemOwnership,
-//           perFriendLinkCount / itemOwnerFriendNum, userFriendNum,
-//           # of items owned by the user, itemOwnerPagerank, caterogyInnerProduct
+// Features: UserFriendship, ItemOwnership, (perFriendLinkCount), userFriendNum,
+//           # of items owned by the user, (itemOwnerPagerank), caterogyInnerProduct
 void ConstructGraph::constructFeatures(const int maxDistance, const int direction, std::string predFile, std::string outputFile) {
     /* Read and store links for prediction */
     std::ifstream pred(predFile); 
@@ -281,8 +264,8 @@ void ConstructGraph::sampleCandidates(const int sampleNum, std::string outputFil
         }
         output << user << ' ' << item << ' ' << '?' << std::endl;
     }
-    std::cout << "sample finished" << std::endl;
     output.close();
+    std::cout << "sample finished" << std::endl;
 }
 
 void insertCandidate(std::string predFile, const int userNum,
@@ -298,7 +281,7 @@ void insertCandidate(std::string predFile, const int userNum,
     pred.close();
 }
 
-void addFFactorFunction(FactorGraph& graph, std::string featuresFile, std::map<Pair, Index>& candidate) {
+void ConstructGraph::addFFactorFunction(FactorGraph& graph, std::string featuresFile) {
     std::ifstream features(featuresFile);
     std::string featuresLine;
     for (auto c: candidate) {
@@ -317,42 +300,20 @@ void addFFactorFunction(FactorGraph& graph, std::string featuresFile, std::map<P
     std::cout << "constructGraph layer1 finished" << std::endl;
 }
 
-void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, std::string featuresFile){
-    insertCandidate(predFile, userNum, candidate, candidateUserInfo);
-    addFFactorFunction(graph, featuresFile, candidate);
-    
+void ConstructGraph::addGFactorFunction(FactorGraph& graph) {
     GFactorFunction *OIFunc = new GFactorFunction(0);
     GFactorFunction *FIFunc = new GFactorFunction(0);
-//    GFactorFunction *FIFunc2 = new GFactorFunction(0);
     GFactorFunction *CCFunc = new GFactorFunction(0);
-    /*for (auto i = 0u; i < userNum; ++i) {
-        for (auto j = 0u; j < userNum; ++j) {
-            bool friends = theyAreFriends(i, j);
-            for(auto k: userItem[j]) {
-                std::map<Pair, Index>::iterator it[2];
-                if((it[0] = candidate.find(Pair(i, k))) == candidate.end()){
-                    continue;
-                }
-                for(auto l: userItem[j]) {
-                    if(l <= k || (it[1] = candidate.find(Pair(i, l))) == candidate.end()){
-                        continue;
-                    }
-                    std::vector<Index> scope = {it[0]->second, it[1]->second};
-                    graph.addFactor(scope, *OIFunc);
-                    if(friends){
-                        graph.addFactor(scope, *FIFunc);
-                    }
-                }
-            }
-        }
-    }*/
     for (auto u = 0u; u < userNum; ++u) {
         for (auto info1: candidateUserInfo[u]) {
             for (auto info2: candidateUserInfo[u]) {
                 Index i1 = info1.first;
                 Index i2 = info2.first;
+                if (i2 <= i1) {
+                    continue;
+                }
                 std::vector<Index>* theSameOwner = getTheSameOwner(i1, i2);
-                if (i2 <= i1 || theSameOwner->size() == 0) {
+                if (theSameOwner->size() == 0) {
                     delete theSameOwner;
                     continue;
                 }
@@ -372,30 +333,6 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
             }
         }
     }
-    std::cout << "add OIFunc and FIFunc finished" << std::endl;
-    /*std::vector<Index> category2item[categoryNum];
-    for (Index k = 0u; k < itemNum; ++k) {
-        for(Index c: itemCategory[k]){
-            category2item[c].push_back(k);
-        }
-    }
-    for(Index c = 0; c < categoryNum; c++){
-        std::map<Pair, Index>::iterator it[2];
-        for(Index u = 0; u < userNum; u++){
-            for(Index i = 0; i < category2item[c].size(); i++){
-                if((it[0] = candidate.find(Pair(u, i))) == candidate.end()){
-                    continue;
-                }
-                for(Index j = i; j < category2item[c].size(); j++){
-                    if((it[1] = candidate.find(Pair(u, j))) == candidate.end()){
-                        continue;
-                    }
-                    std::vector<Index> scope = {it[0]->second, it[1]->second};
-                    graph.addFactor(scope, *CCFunc);
-                }
-            }
-        }
-    }*/
     for (auto u = 0u; u < userNum; ++u) {
         for (auto info1: candidateUserInfo[u]) {
             for (auto info2: candidateUserInfo[u]) {
@@ -409,7 +346,13 @@ void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, st
             }
         }
     }
-    std::cout << "constructGraph finished" << std::endl;
+    std::cout << "constructGraph layer2 finished" << std::endl;
+}
+
+void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, std::string featuresFile) {
+    insertCandidate(predFile, userNum, candidate, candidateUserInfo);
+    addFFactorFunction(graph, featuresFile);
+    addGFactorFunction(graph);
 }
 
 bool ConstructGraph::theyAreFriends(Index i, Index j){
@@ -433,7 +376,7 @@ std::vector<Index>* ConstructGraph::getTheSameOwner(Index i1, Index i2) {
 
 bool ConstructGraph::haveTheSameCategory(Index i1, Index i2) {
     for (auto cat1: itemCategory[i1]) {
-        if (itemCategory[cat1].find(i2) != itemCategory[cat1].end()) {
+        if (itemCategory[i2].find(cat1) != itemCategory[i2].end()) {
             return true;
         }
     }
