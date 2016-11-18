@@ -8,6 +8,8 @@
 
 void updateWeights(long double rate, const std::vector<GFactorFunction*>&gfs, const std::vector<Real>&gradient);
 long double norm(const std::vector<Real>&gradient);
-void gradientAscend(unsigned int batchSize, long double rate, Real converge, const FactorGraph&factorGraph);
+void gradientAscend(unsigned int batchSize, long double rate, Real converge,
+                    const FactorGraph&factorGraph,
+                    const std::vector<GFactorFunction*>&);
 
 #endif

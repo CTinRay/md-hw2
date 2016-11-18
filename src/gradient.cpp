@@ -3,6 +3,7 @@
 #include <random>
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 std::random_device rd3;
 std::mt19937_64 gen3(rd3());    
@@ -23,6 +24,7 @@ void updateWeights(long double rate,
     }
 
     HFactorFunction::gamma += rate * gradient[i];
+    std::cout << "i = " << i << std::endl;
     assert(i == gradient.size() - 1);
 }
 
@@ -36,13 +38,13 @@ long double norm(const std::vector<Real>&gradient) {
 }
 
 
-void gradientAscend(unsigned int batchSize, long double rate, Real converge, const FactorGraph&factorGraph) {
+void gradientAscend(unsigned int batchSize, long double rate, Real converge,
+                    const FactorGraph&factorGraph,
+                    const std::vector<GFactorFunction*>&gFactorFunctions) {
     std::vector<TargetFunction*>marginalProbs;
     for (Index i = 0; i < factorGraph.nVars; ++i) {
         marginalProbs.push_back(new MarginalProb(i));
     }    
-
-    std::vector<GFactorFunction*>gFactorFunctions;
     
     Real gradientNorm;
     do {
@@ -54,7 +56,8 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge, con
 
         // Sample marginal probability of candidates
         GibbsSampler marginSampler(batch, factorGraph);
-        auto probs = marginSampler.doSample(16, 100, 1.001);
+        std::cout << "start sampling marginal" << std::endl;
+        auto probs = marginSampler.doSample(16, 1, 10);
 
         // Start to spliting higher/lower
         auto order = std::vector<Index>(batchSize);
@@ -97,14 +100,19 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge, con
                                                 phSum, plSum, hVarInds, lVarInds));
         }
         factors.push_back(new ExpectFactorH(phSum, plSum, hVarInds, lVarInds));
-        
-        // Sample marginal probability of candidates
-        GibbsSampler gradientSampler(batch, factorGraph);
-        auto gradient = gradientSampler.doSample(16, 100, 1.001);
 
+        std::cout << "factor size" << factors.size() << std::endl; 
+        // Sample marginal probability of candidates
+        GibbsSampler gradientSampler(factors, factorGraph);
+        std::cout << "start sampling gradient" << std::endl;
+        auto gradient = gradientSampler.doSample(16, 100, 10);
+        std::cout << "gradient size" << gradient.size() << std::endl; 
         updateWeights(rate, gFactorFunctions, gradient);
         gradientNorm = norm(gradient);
-            
+
+        std::cout << "phSum / plSum = " << phSum / plSum << std::endl;
+        std::cout << "|gradient| = " << gradientNorm << std::endl;
+        
     } while (gradientNorm > converge);
     
 }
