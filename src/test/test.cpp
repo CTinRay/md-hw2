@@ -1,8 +1,9 @@
 #include "../factor-functions.hpp"
 #include "../gibbs-sampler.hpp"
+#include "../construct.hpp"
 #include <iostream>
 #include <cmath>
-
+#include <string>
 
 class MarginalProb: public TargetFunction{
 private:
@@ -220,14 +221,36 @@ bool test4(){
     
     return true;
 }
-    
-int main(){
+
+bool test5(std::string dirName, int maxDistance) {
+    FactorGraph graph(1000000);
+    GFactorFunction *OIFunc = new GFactorFunction(0);
+    GFactorFunction *FIFunc = new GFactorFunction(0);
+    GFactorFunction *CCFunc = new GFactorFunction(0);
+    ConstructGraph construct;
+    construct.insertData( dirName + "user.txt", dirName + "relation.txt", dirName + "message.txt", dirName + "pagerank.txt" );
+    construct.sampleCandidates(50000, dirName + "sample_pred.id");
+    construct.constructFeatures(maxDistance, DIRECTED, dirName + "pred.id" , dirName + "features.txt");
+    construct.constructFeatures(maxDistance, DIRECTED, dirName + "sample_pred.id" , dirName + "sample_features.txt");
+    construct.constructGraph(graph, OIFunc, FIFunc, CCFunc, dirName + "pred.id", dirName + "features.txt");
+    std::cout << "(O) Pass test5" << std::endl;
+    return true;
+}
+
+int main(int argc, char* argv[]){
     // std::vector<Index>args(1, 0);
     // TestFactorFunction t;
     // std::vector<TestFactorFunction>ts;
     // graph.addFactor(args, t);
-    test1();
-    test2();
-    test3();
-    test4();
+    // test1();
+    // test2();
+    // test3();
+    // test4();
+    std::string dirName(argv[1]);
+    dirName = dirName + '/';
+    int maxDistance = 3;
+    if (argc == 3) {
+        maxDistance = std::stoi(argv[2]);
+    }
+    test5(dirName, maxDistance);
 }
