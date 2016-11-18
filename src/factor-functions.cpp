@@ -7,8 +7,12 @@
 
 std::vector<Real> FFactorFunction::alpha = std::vector<Real>(3, 1);
 
+FactorFunction::FactorFunction(FactorType factorType)
+    :factorType(factorType){}
+
 FFactorFunction::FFactorFunction(const std::vector<Real>&features)
-    :features(features){}
+    :FactorFunction(FactorType::f),
+     features(features){}
 
 Real FFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args) const{
     return EXP(*args[0] * (alpha[0] * features[0] +
@@ -22,7 +26,8 @@ Real FFactorFunction::evalF(Index i, const std::vector<std::vector<Label>::itera
 
 
 GFactorFunction::GFactorFunction(Real beta)
-    :beta(beta){}
+    :FactorFunction(FactorType::g),
+     beta(beta){}
 
 Real GFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args) const{
     return EXP(beta * *args[0] * *args[1]);
@@ -36,7 +41,8 @@ Real GFactorFunction::evalF(const std::vector<std::vector<Label>::iterator>&args
 Real HFactorFunction::gamma = 1;
 
 HFactorFunction::HFactorFunction(unsigned int ti)
-    :ti(ti){};
+    :FactorFunction(FactorType::h),
+     ti(ti){};
 
 Real HFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args) const{
     unsigned int count = 0;
