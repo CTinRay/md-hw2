@@ -300,10 +300,8 @@ void ConstructGraph::addFFactorFunction(FactorGraph& graph, std::string features
     std::cout << "constructGraph layer1 finished" << std::endl;
 }
 
-void ConstructGraph::addGFactorFunction(FactorGraph& graph) {
-    GFactorFunction *OIFunc = new GFactorFunction(0);
-    GFactorFunction *FIFunc = new GFactorFunction(0);
-    GFactorFunction *CCFunc = new GFactorFunction(0);
+void ConstructGraph::addGFactorFunction(FactorGraph& graph, 
+                                        GFactorFunction* OIFunc, GFactorFunction* FIFunc, GFactorFunction* CCFunc) {
     for (auto u = 0u; u < userNum; ++u) {
         for (auto info1: candidateUserInfo[u]) {
             for (auto info2: candidateUserInfo[u]) {
@@ -325,9 +323,11 @@ void ConstructGraph::addGFactorFunction(FactorGraph& graph) {
                     }
                 }
                 std::vector<Index> scopes = {info1.second, info2.second};
-                graph.addFactor(scopes, *OIFunc);
                 if (friendship) {
                     graph.addFactor(scopes, *FIFunc);
+                }
+                else {
+                    graph.addFactor(scopes, *OIFunc);
                 }
                 delete theSameOwner;
             }
@@ -349,10 +349,12 @@ void ConstructGraph::addGFactorFunction(FactorGraph& graph) {
     std::cout << "constructGraph layer2 finished" << std::endl;
 }
 
-void ConstructGraph::constructGraph(FactorGraph& graph, std::string predFile, std::string featuresFile) {
+void ConstructGraph::constructGraph(FactorGraph& graph,
+                                    GFactorFunction* OIFunc, GFactorFunction* FIFunc, GFactorFunction* CCFunc, 
+                                    std::string predFile, std::string featuresFile) {
     insertCandidate(predFile, userNum, candidate, candidateUserInfo);
     addFFactorFunction(graph, featuresFile);
-    addGFactorFunction(graph);
+    addGFactorFunction(graph, OIFunc, FIFunc, CCFunc);
 }
 
 bool ConstructGraph::theyAreFriends(Index i, Index j){

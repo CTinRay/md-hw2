@@ -224,12 +224,15 @@ bool test4(){
 
 bool test5(std::string dirName, int maxDistance) {
     FactorGraph graph(1000000);
+    GFactorFunction *OIFunc = new GFactorFunction(0);
+    GFactorFunction *FIFunc = new GFactorFunction(0);
+    GFactorFunction *CCFunc = new GFactorFunction(0);
     ConstructGraph construct;
     construct.insertData( dirName + "user.txt", dirName + "relation.txt", dirName + "message.txt", dirName + "pagerank.txt" );
     construct.sampleCandidates(50000, dirName + "sample_pred.id");
     construct.constructFeatures(maxDistance, DIRECTED, dirName + "pred.id" , dirName + "features.txt");
     construct.constructFeatures(maxDistance, DIRECTED, dirName + "sample_pred.id" , dirName + "sample_features.txt");
-    construct.constructGraph(graph, dirName + "pred.id", dirName + "features.txt");
+    construct.constructGraph(graph, OIFunc, FIFunc, CCFunc, dirName + "pred.id", dirName + "features.txt");
     std::cout << "(O) Pass test5" << std::endl;
     return true;
 }

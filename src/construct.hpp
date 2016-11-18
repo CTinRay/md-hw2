@@ -42,7 +42,7 @@ private:
 
     int BFS(Index start, const int maxDistance, Index item, const int direction);
     void addFFactorFunction(FactorGraph& graph, std::string featuresFile);
-    void addGFactorFunction(FactorGraph& graph);
+    void addGFactorFunction(FactorGraph& graph, GFactorFunction* OIFunc, GFactorFunction* FIFunc, GFactorFunction* CCFunc);
     bool theyAreFriends(Index i, Index j);
     std::vector<Index>* getTheSameOwner(Index i1, Index i2);
     bool haveTheSameCategory(Index i1, Index i2);
@@ -52,7 +52,8 @@ public:
     void constructFeatures(const int maxDistance, const int direction, // DIRECTED, REVERSE, UNDIRECTED
                             std::string predFile, std::string outputFile);
     void sampleCandidates(const int sampleNum, std::string outputFile);
-    void constructGraph(FactorGraph& graph, std::string predFile, std::string featuresFile); // must run insertData first
+    void constructGraph(FactorGraph& graph, GFactorFunction* OIFunc, GFactorFunction* FIFunc, GFactorFunction* CCFunc, 
+                        std::string predFile, std::string featuresFile); // must run insertData first
 };
 
 #endif
