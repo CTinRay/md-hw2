@@ -44,8 +44,7 @@ public:
     Real beta;
     GFactorFunction(Real beta);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
-    Real evalF(Index i,
-               const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real evalF(const std::vector<std::vector<Label>::iterator>&args) const;    
     const FactorType factorType = FactorType::g;
 };
 

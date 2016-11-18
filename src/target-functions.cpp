@@ -72,8 +72,8 @@ Real ExpectFactorG::eval(const EvalGraph&graph) const{
     Real product = RealMulId;
     for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
         if (&graph.factorGraph.factors[i].function == function) {
-            const FFactorFunction*g =
-                (const FFactorFunction*) &graph.factorGraph.factors[i].function;
+            const GFactorFunction*g =
+                (const GFactorFunction*) &graph.factorGraph.factors[i].function;
             product *= g -> evalF(graph.scopes[i]);
         }
     }
@@ -107,8 +107,8 @@ Real ExpectFactorH::eval(const EvalGraph&graph) const{
     Real product = RealMulId;
     for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
         if (graph.factorGraph.factors[i].function.factorType == FactorType::h) {
-            const FFactorFunction*g =
-                (const FFactorFunction*) &graph.factorGraph.factors[i].function;
+            const HFactorFunction*g =
+                (const HFactorFunction*) &graph.factorGraph.factors[i].function;
             product *= g -> evalF(graph.scopes[i]);
         }
     }

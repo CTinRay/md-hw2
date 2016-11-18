@@ -1,14 +1,11 @@
-#include "factor-graph.hpp"
-#include "target-functions.hpp"
-#include "gibbs-sampler.hpp"
-#include <vector>
+#include "gradient.hpp"
 #include <ctime>
 #include <random>
 #include <algorithm>
 #include <cassert>
 
-std::random_device rd;
-std::mt19937_64 gen(rd());    
+std::random_device rd3;
+std::mt19937_64 gen3(rd3());    
 
 
 void updateWeights(long double rate,
@@ -50,7 +47,7 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge, con
     Real gradientNorm;
     do {
         // random sample batch of candidates
-        std::shuffle (marginalProbs.begin(), marginalProbs.end(), gen);   
+        std::shuffle (marginalProbs.begin(), marginalProbs.end(), gen3);   
         std::vector<TargetFunction*>batch;
         std::copy(marginalProbs.begin(), marginalProbs.begin() + batchSize,
                   std::back_inserter(batch));

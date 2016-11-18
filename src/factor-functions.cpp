@@ -28,8 +28,7 @@ Real GFactorFunction::eval(const std::vector<std::vector<Label>::iterator>&args)
     return EXP(beta * *args[0] * *args[1]);
 }
 
-Real GFactorFunction::evalF(Index i,
-                            const std::vector<std::vector<Label>::iterator>&args) const{
+Real GFactorFunction::evalF(const std::vector<std::vector<Label>::iterator>&args) const{
     return *args[0] * *args[1];
 }
 
