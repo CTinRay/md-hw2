@@ -1,4 +1,5 @@
 #include "target-functions.hpp"
+#include <iostream>
 
 MarginalProb::MarginalProb(Index varInd)
     :varInd(varInd){}
@@ -33,15 +34,18 @@ Real ExpectFactorF::eval(const EvalGraph&graph) const{
     if (countH == 0 && countL == 0) {
         return 0;
     }
-    Real product = RealMulId;
+    Real sum = RealAddId;
     for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
         if (graph.factorGraph.factors[i].function.factorType == FactorType::f) {
             const FFactorFunction*f =
                 (const FFactorFunction*) &graph.factorGraph.factors[i].function;
-            product *= f -> evalF(featureInd, graph.scopes[i]);
-        }
+            sum += f -> evalF(featureInd, graph.scopes[i]);
+            // if (product <= 0) {
+            //     std::cerr << "product < 0: " << product << std::endl;
+            // }
+        }        
     }
-    return (countH * product) / phSum - (countL * product) / plSum ;
+    return (countH * sum) / phSum - (countL * sum) / plSum ;
 }    
 
 
@@ -69,15 +73,15 @@ Real ExpectFactorG::eval(const EvalGraph&graph) const{
     if (countH == 0 && countL == 0) {
         return 0;
     }
-    Real product = RealMulId;
+    Real sum = RealAddId;
     for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
         if (&graph.factorGraph.factors[i].function == function) {
             const GFactorFunction*g =
                 (const GFactorFunction*) &graph.factorGraph.factors[i].function;
-            product *= g -> evalF(graph.scopes[i]);
+            sum += g -> evalF(graph.scopes[i]);
         }
     }
-    return (countH * product) / phSum - (countL * product) / plSum ;
+    return (countH * sum) / phSum - (countL * sum) / plSum ;
 }    
 
 
@@ -104,13 +108,13 @@ Real ExpectFactorH::eval(const EvalGraph&graph) const{
     if (countH == 0 && countL == 0) {
         return 0;
     }
-    Real product = RealMulId;
+    Real sum = RealAddId;
     for (Index i = 0; i < graph.factorGraph.factors.size(); i++) {
         if (graph.factorGraph.factors[i].function.factorType == FactorType::h) {
             const HFactorFunction*g =
                 (const HFactorFunction*) &graph.factorGraph.factors[i].function;
-            product *= g -> evalF(graph.scopes[i]);
+            sum += g -> evalF(graph.scopes[i]);
         }
     }
-    return (countH * product) / phSum - (countL * product) / plSum ;
+    return (countH * sum) / phSum - (countL * sum) / plSum ;
 }    
