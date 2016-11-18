@@ -49,19 +49,24 @@ int main(int argc, char *argv[]) {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
     }*/
     
-    FactorGraph factorGraph(1000000);
+    FactorGraph factorGraph(82318);
     FFactorFunction::alpha.resize(5, alpha);
     HFactorFunction::gamma = gamma;
     GFactorFunction *OIFunc = new GFactorFunction(beta);
     GFactorFunction *FIFunc = new GFactorFunction(beta);
     GFactorFunction *CCFunc = new GFactorFunction(beta);
+
+    std::vector<GFactorFunction*>gFactorFunctions;
+    gFactorFunctions.push_back(OIFunc);
+    gFactorFunctions.push_back(FIFunc);
+    gFactorFunctions.push_back(CCFunc);
     
     ConstructGraph construct;
     construct.insertData( directory + "user.txt", directory + "relation.txt", directory + "message.txt", directory + "pagerank.txt" );
     construct.constructFeatures(maxDistance, DIRECTED, directory + "pred.id" , directory + "features.txt");
     construct.constructGraph(factorGraph, OIFunc, FIFunc, CCFunc, directory + "pred.id", directory + "features.txt");
     
-    gradientAscend(batchSize, rate, converge, factorGraph);
+    gradientAscend(batchSize, rate, converge, factorGraph, gFactorFunctions);
 
     return 0;
 }
