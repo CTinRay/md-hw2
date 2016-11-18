@@ -44,9 +44,10 @@ public:
 };
 
 // Factor function in the top layer of the three-layer graph in paper.
-class HFactorFunction: virtual FactorFunction{
+class HFactorFunction: public FactorFunction{
     static Real gamma;
     unsigned int ti;
+public:
     HFactorFunction(unsigned int ti);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
 };

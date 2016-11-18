@@ -349,12 +349,27 @@ void ConstructGraph::addGFactorFunction(FactorGraph& graph,
     std::cout << "constructGraph layer2 finished" << std::endl;
 }
 
+void  ConstructGraph::addHFactorFunction(FactorGraph& graph){
+    std::vector<std::vector<Index>> item2candidateScope;
+    item2candidateScope.resize(itemNum);
+    for(auto c: candidate){
+        Index item = c.first.second;
+        Index scope = c.second;
+        item2candidateScope[item].push_back(scope);
+    }
+    for(Index i = 0; i < itemNum; i++){
+        HFactorFunction* HFunc = new HFactorFunction(itemLinkCount[i]);
+        graph.addFactor(item2candidateScope[i], *HFunc);
+    }
+    std::cout << "constructGraph layer3 finished" << std::endl;
+}
 void ConstructGraph::constructGraph(FactorGraph& graph,
                                     GFactorFunction* OIFunc, GFactorFunction* FIFunc, GFactorFunction* CCFunc, 
                                     std::string predFile, std::string featuresFile) {
     insertCandidate(predFile, userNum, candidate, candidateUserInfo);
     addFFactorFunction(graph, featuresFile);
     addGFactorFunction(graph, OIFunc, FIFunc, CCFunc);
+    addHFactorFunction(graph);
 }
 
 bool ConstructGraph::theyAreFriends(Index i, Index j){
