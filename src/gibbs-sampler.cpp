@@ -1,7 +1,7 @@
 #include "gibbs-sampler.hpp"
 #include <random>
 #include <thread>
-#include <iostream>
+// #include <iostream>
 
 #define SQUARE(X) (X) * (X)
 
@@ -121,9 +121,9 @@ bool GibbsSampler::isConverge(long double convergeRatio,
             // std::cout << "interchain " << i << " var = " << interChainVars[i] << std::endl;
             // std::cout << "intrachain " << i << " var = " << intraChainVars[i] << std::endl;
 
-            for (auto&&chain: chains) {
-                std::cout << "mean i" << chain.getMeans()[i] << std::endl;
-            }
+            // for (auto&&chain: chains) {
+            //     std::cout << "mean i" << chain.getMeans()[i] << std::endl;
+            // }
             
             return false;
         }            
