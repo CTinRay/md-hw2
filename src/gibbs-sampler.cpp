@@ -5,18 +5,17 @@
 
 #define SQUARE(X) (X) * (X)
 
-std::random_device rd;
-std::mt19937_64 gen(rd());    
+thread_local static std::random_device rd;
 
-
-Label rand(Real potenrialP, Real potenrialN){
+Label GibbsSampler::Chain::rand(Real potenrialP, Real potenrialN){
     std::bernoulli_distribution d(potenrialP / (potenrialN + potenrialP));
     return d(gen) ? Label::positive : Label::negative;
 }
 
 GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
                            const std::vector<TargetFunction*>&targetFunctions)
-    :evalGraph(factorGraph),
+    :gen(std::mt19937_64(rd())),
+     evalGraph(factorGraph),
      targetFunctions(targetFunctions),
      nItered(0),
      sum(std::vector<Real>(targetFunctions.size(), RealAddId)),
