@@ -25,8 +25,8 @@ public:
 class EvalGraph {
 private:
 public:
-    std::vector< std::vector<std::vector<Label>::iterator> >scopes;
     const FactorGraph&factorGraph;
+    std::vector< std::vector<std::vector<Label>::iterator> >scopes;
     std::vector<Label>assignment;
     EvalGraph(const FactorGraph&factorGraph);
     EvalGraph(const EvalGraph&graph);    
