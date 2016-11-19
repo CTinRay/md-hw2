@@ -58,5 +58,5 @@ Real HFactorFunction::evalF(const std::vector<std::vector<Label>::iterator>&args
     for (unsigned int i = 0; i < args.size(); ++i ){
         count += *args[i] == 1 ? 1 : 0;
     }
-    return EXP((ti - count) * (ti - count));
+    return (ti - count) * (ti - count);
 }

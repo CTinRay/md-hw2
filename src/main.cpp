@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     directory += '/';
     int maxDistance = 3;
     unsigned int batchSize = 1000;
-    long double rate = 0.1;
+    long double rate = 0.01;
     Real converge = 0.1;
     Real alpha = 0.01, beta = 0.01, gamma = -0.01;
 

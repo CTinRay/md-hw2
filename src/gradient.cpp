@@ -4,10 +4,24 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <fstream>
 
 std::random_device rd3;
 std::mt19937_64 gen3(rd3());    
 
+void dumpAns(Real median, const std::vector<Real>&probs) {
+    std::fstream f;    
+    f.open("/tmp/predict.txt", std::fstream::out);
+    for (auto p : probs) {
+        if (p >= median) {
+            f << "1" << std::endl;
+        }else {
+            f << "0" << std::endl;
+        }
+    }
+    f.close();
+}
+             
 
 void updateWeights(long double rate,
                    const std::vector<GFactorFunction*>&gfs,
@@ -74,7 +88,7 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         // Sample marginal probability of candidates
         GibbsSampler marginSampler(batch, factorGraph);
         std::cout << "start sampling marginal" << std::endl;
-        auto probs = marginSampler.doSample(16, 1, 100);
+        auto probs = marginSampler.doSample(16, 100, 5);
 
         // Start to spliting higher/lower        
         auto median = getMedian(probs);
@@ -83,16 +97,35 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         std::vector<Index>hVarInds, lVarInds;
         Real phSum = RealAddId + 1;
         Real plSum = RealAddId + 1;
+        std::cout << "probs: ";
+
+        // Only take account those != median
         for (Index i = 0; i < probs.size(); ++i) {
-            if (probs[i] >= median && hVarInds.size() < probs.size() / 2) {
+            std::cout << probs[i] << " ";
+            if (probs[i] > median) {
                 phSum += probs[i];
                 hVarInds.push_back(((MarginalProb*) batch[i]) -> varInd);
-            } else {
+            } else if (probs[i] < median){
                 plSum += probs[i];
                 lVarInds.push_back(((MarginalProb*) batch[i]) -> varInd);
             }            
         }
 
+        // Then consider those == median
+        for (Index i = 0; i < probs.size(); ++i) {
+            if (probs[i] == median) {
+                if( hVarInds.size() < probs.size() / 2) {
+                    phSum += probs[i];
+                    hVarInds.push_back(((MarginalProb*) batch[i]) -> varInd);
+                } else {
+                    plSum += probs[i];
+                    lVarInds.push_back(((MarginalProb*) batch[i]) -> varInd);
+                }
+            }
+        }
+        
+        std::cout << std::endl;
+        
         std::cout << "phSum = " <<  phSum
                   << " plSum = " << plSum << std::endl;
         std::cout << "phSum / plSum = " << phSum / plSum << std::endl;
@@ -116,9 +149,9 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         auto gradient = gradientSampler.doSample(16, 100, 10);
         updateWeights(rate, gFactorFunctions, gradient);
         gradientNorm = norm(gradient);
-
+        
         std::cout << "|gradient| = " << gradientNorm << std::endl;
-        printWeights(gFactorFunctions);
+        printWeights(gFactorFunctions);        
     } while (gradientNorm > converge);
     
 }
