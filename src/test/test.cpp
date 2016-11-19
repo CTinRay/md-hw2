@@ -5,19 +5,19 @@
 #include <cmath>
 #include <string>
 
-class MarginalProb: public TargetFunction{
-private:
-    Index varInd;
-public:    
-    MarginalProb(Index varInd)
-        :varInd(varInd){
+// class MarginalProb: public TargetFunction{
+// private:
+//     Index varInd;
+// public:    
+//     MarginalProb(Index varInd)
+//         :varInd(varInd){
         
-    }
+//     }
 
-    Real eval(const EvalGraph&graph) const{
-        return graph.assignment[varInd] == Label::positive ? 1 : 0;
-    }
-};
+//     Real eval(const EvalGraph&graph) const{
+//         return graph.assignment[varInd] == Label::positive ? 1 : 0;
+//     }
+// };
 
 class MarginalProb2: public TargetFunction{
 private:
@@ -53,7 +53,8 @@ public:
 
 class TestFactorFunction1: public FactorFunction{
 public:
-    TestFactorFunction1(){
+    TestFactorFunction1()
+        :FactorFunction(FactorType::f){
     }
     
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const {
@@ -73,7 +74,8 @@ private:
     std::vector<Real>matrix;
 public:    
     MatrixFactorFunction(std::vector<Real>&matrix)
-        :matrix(matrix){
+        :FactorFunction(FactorType::f),
+         matrix(matrix){
     }
     
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const {
@@ -93,8 +95,8 @@ bool test1(){
     funcs.push_back(new MarginalProb(1));
     for (int i = 0; i < 10; ++i ){
         GibbsSampler sampler(funcs, graph);
-        auto probs = sampler.doSample(4, 10, 1.0001);
-        if (std::abs(probs[0] - 0.5) > 0.01 || abs(probs[1] - 0.5) > 0.05) {
+        auto probs = sampler.doSample(8, 100, 1.0001);
+        if (std::abs(probs[0] - 0.5) > 0.05 || abs(probs[1] - 0.5) > 0.05) {
             std::cout << "(X) Fail test1: prob "
                       << probs[0] << " "
                       << probs[1] << std::endl;
@@ -121,9 +123,9 @@ bool test2(){
     for (int i = 0; i < 10; ++i ){
         GibbsSampler sampler(funcs, graph);
         auto probs = sampler.doSample(8, 10, 1.0001);
-        if (std::abs(probs[0] - 0.3) > 0.01 ||
-            std::abs(probs[1] - 0.5) > 0.01 ||
-            std::abs(probs[2] - 0.15) > 0.01) {
+        if (std::abs(probs[0] - 0.3) > 0.05 ||
+            std::abs(probs[1] - 0.5) > 0.05 ||
+            std::abs(probs[2] - 0.15) > 0.05) {
             std::cout << "(X) Fail test2 probs "
                       << probs[0] << " "
                       << probs[1] << " "
@@ -161,8 +163,8 @@ bool test3(){
     for (int i = 0; i < 10; ++i ){
         GibbsSampler sampler(funcs, graph);
         auto probs = sampler.doSample(16, 100, 1.0001);
-        if (std::abs(probs[0] - (118.0 / 155.0)) > 0.01 ||
-            std::abs(probs[1] - 8.0 / 155.0) > 0.01) {
+        if (std::abs(probs[0] - (118.0 / 155.0)) > 0.05 ||
+            std::abs(probs[1] - 8.0 / 155.0) > 0.05) {
             std::cout << "(X) Fail test3: prob"
                       << probs[0] << " "
                       << probs[1] << std::endl;
@@ -209,7 +211,7 @@ bool test4(){
         GibbsSampler sampler(funcs, graph);
         auto probs = sampler.doSample(4, 100, 1.001);
         // std::cout << probs[0] << std::endl;
-        if (std::abs(probs[0] - 0.89314982) > 0.01) {
+        if (std::abs(probs[0] - 0.89314982) > 0.05) {
             std::cout << "(X) Fail test4: prob"
                       << probs[0] << std::endl;
             // return false;
@@ -242,10 +244,10 @@ int main(int argc, char* argv[]){
     // TestFactorFunction t;
     // std::vector<TestFactorFunction>ts;
     // graph.addFactor(args, t);
-    // test1();
-    // test2();
-    // test3();
-    // test4();
+    test1();
+    test2();
+    test3();
+    test4();
     std::string dirName(argv[1]);
     dirName = dirName + '/';
     int maxDistance = 3;
