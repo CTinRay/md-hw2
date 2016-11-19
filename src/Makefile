@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -Wall -O3 -march=native -Ofast -flto -funroll-loops -lpthread
+CXXFLAGS = -std=c++11 -Wall -O3 -march=native -Ofast -flto -funroll-loops -pthread
 # CXXFLAGS = -std=c++11 -Wall -lpthread
 DBGFLAGS = -g3
 LDLIBS+=-lboost_program_options
