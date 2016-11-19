@@ -27,6 +27,19 @@ void updateWeights(long double rate,
     assert(i == gradient.size() - 1);
 }
 
+void printWeights(const std::vector<GFactorFunction*>&gfs) {
+
+    std::cout << "weights = ";
+    for (auto a : FFactorFunction::alpha) {
+        std::cout << a << " ";
+    }
+    
+    for (unsigned int j = 0; j < gfs.size(); ++j) {
+        std::cout << gfs[j] -> beta << " ";
+    }
+
+    std::cout << HFactorFunction::gamma << std::endl;
+}
 
 long double norm(const std::vector<Real>&gradient) {
     Real sum = RealAddId;
@@ -36,6 +49,11 @@ long double norm(const std::vector<Real>&gradient) {
     return std::sqrt((long double)sum);
 }
 
+long double getMedian(const std::vector<Real>&xs) {
+    std::vector<Real>copy(xs);
+    std::sort(copy.begin(), copy.end());
+    return (copy[copy.size() / 2] + copy[copy.size() / 2 - 1]) / 2;
+}
 
 void gradientAscend(unsigned int batchSize, long double rate, Real converge,
                     const FactorGraph&factorGraph,
@@ -56,40 +74,31 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         // Sample marginal probability of candidates
         GibbsSampler marginSampler(batch, factorGraph);
         std::cout << "start sampling marginal" << std::endl;
-        auto probs = marginSampler.doSample(16, 100, 5);
+        auto probs = marginSampler.doSample(16, 1, 100);
 
-        // Start to spliting higher/lower
-        auto order = std::vector<Index>(batchSize);
-        {// Generate {0, 1, 2, ..., n - 1}
-            Index n = 0;
-            std::generate_n(std::back_inserter(order),
-                        batchSize, [&n](){ return n++; });
-        }        
-        std::sort(order.begin(), order.end(),
-                  [&probs](const Index a, const Index b){
-                      return probs[a] > probs[b];
-                  });
-
-        std::vector<Index>hVarInds;
-        for (Index i = 0; i < batchSize / 2; ++i) {
-            hVarInds.push_back(((MarginalProb*) batch[order[i]]) -> varInd);
-        }
+        // Start to spliting higher/lower        
+        auto median = getMedian(probs);
+        std::cout << "median:" << median << std::endl;
         
-        std::vector<Index>lVarInds;
-        for (Index i = batchSize / 2; i < batchSize; ++i) {
-            lVarInds.push_back(((MarginalProb*) batch[order[i]]) -> varInd);
-        }
-
+        std::vector<Index>hVarInds, lVarInds;
         Real phSum = RealAddId + 1;
-        for (Index i = 0; i < batchSize / 2; ++i) {
-            phSum += probs[order[i]];
+        Real plSum = RealAddId + 1;
+        for (Index i = 0; i < probs.size(); ++i) {
+            if (probs[i] >= median && hVarInds.size() < probs.size() / 2) {
+                phSum += probs[i];
+                hVarInds.push_back(((MarginalProb*) batch[i]) -> varInd);
+            } else {
+                plSum += probs[i];
+                lVarInds.push_back(((MarginalProb*) batch[i]) -> varInd);
+            }            
         }
 
-        Real plSum = RealAddId + 1;
-        for (Index i = batchSize / 2 + 1; i < batchSize; ++i) {
-            plSum += probs[order[i]];
-        }
+        std::cout << "phSum = " <<  phSum
+                  << " plSum = " << plSum << std::endl;
+        std::cout << "phSum / plSum = " << phSum / plSum << std::endl;
+        std::cout << "size of hVarInds = " << hVarInds.size() << std::endl;
         
+        // Make vector of target function (S).
         std::vector<TargetFunction*>factors;
         for (Index i = 0; i < FFactorFunction::alpha.size(); ++i) {
             factors.push_back(new ExpectFactorF(i, phSum, plSum, hVarInds, lVarInds));
@@ -104,15 +113,12 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         GibbsSampler gradientSampler(factors, factorGraph);
         std::cout << "start sampling gradient" << std::endl;
 
-        std::cout << "phSum = " <<  phSum
-                  << " plSum = " << plSum << std::endl;        
         auto gradient = gradientSampler.doSample(16, 100, 10);
         updateWeights(rate, gFactorFunctions, gradient);
         gradientNorm = norm(gradient);
 
-        std::cout << "phSum / plSum = " << phSum / plSum << std::endl;
         std::cout << "|gradient| = " << gradientNorm << std::endl;
-        
+        printWeights(gFactorFunctions);
     } while (gradientNorm > converge);
     
 }
