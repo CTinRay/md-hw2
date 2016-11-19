@@ -24,7 +24,6 @@ void updateWeights(long double rate,
     }
 
     HFactorFunction::gamma += rate * gradient[i];
-    std::cout << "i = " << i << std::endl;
     assert(i == gradient.size() - 1);
 }
 
@@ -57,7 +56,7 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         // Sample marginal probability of candidates
         GibbsSampler marginSampler(batch, factorGraph);
         std::cout << "start sampling marginal" << std::endl;
-        auto probs = marginSampler.doSample(16, 1, 10);
+        auto probs = marginSampler.doSample(16, 100, 5);
 
         // Start to spliting higher/lower
         auto order = std::vector<Index>(batchSize);
@@ -81,12 +80,12 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
             lVarInds.push_back(((MarginalProb*) batch[order[i]]) -> varInd);
         }
 
-        Real phSum = RealAddId;
+        Real phSum = RealAddId + 1;
         for (Index i = 0; i < batchSize / 2; ++i) {
             phSum += probs[order[i]];
         }
 
-        Real plSum = RealAddId;
+        Real plSum = RealAddId + 1;
         for (Index i = batchSize / 2 + 1; i < batchSize; ++i) {
             plSum += probs[order[i]];
         }
@@ -101,12 +100,13 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         }
         factors.push_back(new ExpectFactorH(phSum, plSum, hVarInds, lVarInds));
 
-        std::cout << "factor size" << factors.size() << std::endl; 
         // Sample marginal probability of candidates
         GibbsSampler gradientSampler(factors, factorGraph);
         std::cout << "start sampling gradient" << std::endl;
+
+        std::cout << "phSum = " <<  phSum
+                  << " plSum = " << plSum << std::endl;        
         auto gradient = gradientSampler.doSample(16, 100, 10);
-        std::cout << "gradient size" << gradient.size() << std::endl; 
         updateWeights(rate, gFactorFunctions, gradient);
         gradientNorm = norm(gradient);
 

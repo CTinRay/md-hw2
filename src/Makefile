@@ -1,5 +1,5 @@
-CXXFLAGS = -std=c++11 -Wall -O3 -march=corei7 -Ofast -flto -funroll-loops -lpthread
-# CXXFLAGS = -std=c++11 -Wall
+CXXFLAGS = -std=c++11 -Wall -O3 -march=native -Ofast -flto -funroll-loops -lpthread
+# CXXFLAGS = -std=c++11 -Wall -lpthread
 DBGFLAGS = -g3
 LDLIBS+=-lboost_program_options
 OBJS = factor-graph.o factor-functions.o gibbs-sampler.o construct.o gradient.o target-functions.o 
