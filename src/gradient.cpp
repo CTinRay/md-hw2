@@ -88,7 +88,7 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         // Sample marginal probability of candidates
         GibbsSampler marginSampler(batch, factorGraph);
         std::cout << "start sampling marginal" << std::endl;
-        auto probs = marginSampler.doSample(16, 100, 5);
+        auto probs = marginSampler.doSample(16, 500, 2);
 
         // Start to spliting higher/lower        
         auto median = getMedian(probs);
@@ -146,7 +146,7 @@ void gradientAscend(unsigned int batchSize, long double rate, Real converge,
         GibbsSampler gradientSampler(factors, factorGraph);
         std::cout << "start sampling gradient" << std::endl;
 
-        auto gradient = gradientSampler.doSample(16, 100, 10);
+        auto gradient = gradientSampler.doSample(16, 500, 2);
         updateWeights(rate, gFactorFunctions, gradient);
         gradientNorm = norm(gradient);
         
