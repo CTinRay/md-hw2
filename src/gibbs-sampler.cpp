@@ -1,21 +1,21 @@
 #include "gibbs-sampler.hpp"
 #include <random>
 #include <thread>
+// #include <iostream>
 
 #define SQUARE(X) (X) * (X)
 
-std::random_device rd;
-std::mt19937_64 gen(rd());    
+thread_local static std::random_device rd;
 
-
-Label rand(Real potenrialP, Real potenrialN){
+Label GibbsSampler::Chain::rand(Real potenrialP, Real potenrialN){
     std::bernoulli_distribution d(potenrialP / (potenrialN + potenrialP));
     return d(gen) ? Label::positive : Label::negative;
 }
 
 GibbsSampler::Chain::Chain(const FactorGraph&factorGraph,
                            const std::vector<TargetFunction*>&targetFunctions)
-    :evalGraph(factorGraph),
+    :gen(std::mt19937_64(rd())),
+     evalGraph(factorGraph),
      targetFunctions(targetFunctions),
      nItered(0),
      sum(std::vector<Real>(targetFunctions.size(), RealAddId)),
@@ -41,7 +41,7 @@ void GibbsSampler::Chain::iterate(unsigned int nIter){
     for (auto i = 0u; i < nIter; ++i) {
         step();
         for (auto j = 0u; j < targetFunctions.size(); ++j) {
-            Real res = targetFunctions[j] -> eval(evalGraph.assignment);
+            Real res = targetFunctions[j] -> eval(evalGraph);
             sum[j] += res;
             squareSum[j] += SQUARE(res);
         }
@@ -89,32 +89,41 @@ GibbsSampler::GibbsSampler(const std::vector<TargetFunction*>&targetFunctions,
 
 bool GibbsSampler::isConverge(long double convergeRatio,
                               const std::vector<GibbsSampler::Chain>&chains){
-    std::vector<Real>interChainVars(targetFunctions.size());
+    std::vector<Real>interChainMeans(targetFunctions.size(), 0);
+    std::vector<Real>interChainVars(targetFunctions.size(), 0);
     std::vector<Real>intraChainVars(targetFunctions.size());
 
     // mean of mean of chains
     for (auto&&chain: chains) {
         const auto&means = chain.getMeans();
         for (auto i = 0u; i < means.size(); ++i) {
-            interChainVars[i] += means[i] / chains.size();
+            interChainMeans[i] += means[i] / chains.size();
         }
     }
 
     for (auto&&chain: chains) {
         const auto&means = chain.getMeans();
+        const auto&vars = chain.getVars();
         // variance of mean of chains
         for (auto i = 0u; i < means.size(); ++i) {
-            interChainVars[i] += SQUARE(means[i] - interChainVars[i]) / chains.size();
+            interChainVars[i] += SQUARE(means[i] - interChainMeans[i]) / chains.size();
         }
         // average of variance of chains
         for (auto i = 0u; i < means.size(); ++i) {
-            intraChainVars[i] += means[i] / chains.size();
+            intraChainVars[i] += vars[i] / chains.size();
         }        
     }
 
     convergeRatio = SQUARE(convergeRatio);
     for (auto i = 0u; i < intraChainVars.size(); ++i) {
         if (interChainVars[i] / intraChainVars[i] > convergeRatio) {
+            // std::cout << "interchain " << i << " var = " << interChainVars[i] << std::endl;
+            // std::cout << "intrachain " << i << " var = " << intraChainVars[i] << std::endl;
+
+            // for (auto&&chain: chains) {
+            //     std::cout << "mean i" << chain.getMeans()[i] << std::endl;
+            // }
+            
             return false;
         }            
     }
@@ -136,18 +145,22 @@ std::vector<Real> GibbsSampler::doSample(unsigned int nChains,
     }
     
     // start sampling
-    for (auto&& chain: chains){
-        chain.iterate(10);
-    }
+    // for (auto&& chain: chains){
+    //     chain.iterate(10);
+    // }
 
-    while (!isConverge(convergeRatio, chains)) {
+
+    do {
+        // std::cout << "100 iter start" << std::endl;
         for (auto i = 0u; i < chains.size(); ++i) {
-            threads[i] = std::thread(&Chain::iterate, &chains[i], 10);
+            threads[i] = std::thread(&Chain::iterate, &chains[i], 100);
         }
         for (auto&&thread: threads) {
             thread.join();
         }
-    };
+        // std::cout << "100 iter end" << std::endl;
+        
+    } while (!isConverge(convergeRatio, chains));
 
 
     // average for result

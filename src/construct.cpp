@@ -143,6 +143,11 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile,
         }
     }
     messageList.close();
+
+    for (auto i = 0u; i < userNum; ++i) {
+        userCategory[i].resize(categoryNum);
+        userCategory[i].shrink_to_fit();
+    }
     
     /* handle pagerank */
     std::ifstream pagerank(pagerankFile);
@@ -367,6 +372,7 @@ void ConstructGraph::constructGraph(FactorGraph& graph,
                                     GFactorFunction* OIFunc, GFactorFunction* FIFunc, GFactorFunction* CCFunc, 
                                     std::string predFile, std::string featuresFile) {
     insertCandidate(predFile, userNum, candidate, candidateUserInfo);
+    graph.nVars = candidate.size();
     addFFactorFunction(graph, featuresFile);
     addGFactorFunction(graph, OIFunc, FIFunc, CCFunc);
     addHFactorFunction(graph);

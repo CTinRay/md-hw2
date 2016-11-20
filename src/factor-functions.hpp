@@ -7,6 +7,8 @@
 // Virtual class that defines interface of FactorFunctions
 class FactorFunction{
 public:
+    const FactorType factorType;
+    FactorFunction(FactorType);
     virtual Real eval(const std::vector<std::vector<Label>::iterator>&args)
         const = 0;
 };
@@ -28,7 +30,8 @@ public:
     static std::vector<Real>alpha;
     const std::vector<Real>features;
     FFactorFunction(const std::vector<Real>&features);
-    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;
+    Real evalF(Index i, const std::vector<std::vector<Label>::iterator>&args) const;
 };
 
 // Factor function in the middle layer of the three-layer graph in paper.
@@ -41,15 +44,17 @@ public:
     Real beta;
     GFactorFunction(Real beta);
     Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real evalF(const std::vector<std::vector<Label>::iterator>&args) const;    
 };
 
 // Factor function in the top layer of the three-layer graph in paper.
 class HFactorFunction: public FactorFunction{
+public:
     static Real gamma;
     unsigned int ti;
-public:
     HFactorFunction(unsigned int ti);
-    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;    
+    Real eval(const std::vector<std::vector<Label>::iterator>&args) const;
+    Real evalF(const std::vector<std::vector<Label>::iterator>&args) const;
 };
 
 #endif

@@ -1,5 +1,6 @@
 #include "factor-graph.hpp"
 #include "target-functions.hpp"
+#include <random>
 
 #ifndef GIBBS_SAMPLER_HPP
 #define GIBBS_SAMPLER_HPP
@@ -10,12 +11,14 @@ private:
     const FactorGraph&factorGraph;
     class Chain{
     private:
+        std::mt19937_64 gen;    
         EvalGraph evalGraph;
         const std::vector<TargetFunction*>&targetFunctions;
         unsigned int nItered;
         std::vector<Real>sum, squareSum, means, vars;
         void step();
         void updateMeanVar();
+        Label rand(Real potenrialP, Real potenrialN);
     public:
         Chain(const FactorGraph&factorGraph,
               const std::vector<TargetFunction*>&targetFunctions);
