@@ -20,7 +20,7 @@ ConstructGraph::ConstructGraph()
      itemOwner(MAX_ITEM),
      itemCategory(MAX_ITEM){
          for(auto i = 0u; i < WEIGHT_NUM; i++){
-             weightArr[0][i] = 0.1;
+             weightArr[0][i] = 0.0001;
              weightArr[1][i] = 0.0;
          }
          //weightArr[2][0] = 0.01;
@@ -157,9 +157,24 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile,
             }
         }
     }
+
     itemNum++;
     categoryNum++;
     messageList.close();
+
+    for (auto i = 0u; i < userNum; ++i) {
+        userCategory[i].resize(categoryNum);
+        userCategory[i].shrink_to_fit();
+    }
+
+    category2userSet.resize(categoryNum);
+    for(Index user = 0; user < userNum; user++){
+        for(Index c = 0; c < categoryNum; c++){
+            if(userCategory[user][c] > 0){
+                category2userSet[c].insert(user);
+            }
+        }
+    }
 
     /* handle pagerank */
     //std::ifstream pagerank(pagerankFile);

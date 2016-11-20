@@ -56,6 +56,12 @@ void predResult(ConstructGraph& graph, std::string& outFilename){
         pArr.push_back(potential);
 //        Real z = potential + 1/potential;
         std::cout << user << " " << item << " " << potential << std::endl;
+        std::vector<std::vector<Real>> f = graph.getFeatures(user, item);
+        for(Index k = 0; k < f.size(); k++){
+            for(Index l = 0; l < f[k].size(); l++){
+                std::cout << std::setw(15) << std::left << f[k][l] << " " << std::setw(15) << std::left << graph.weightArr[k][l] << std::endl;
+            }
+        }
 //        if(potential/z > 0.5){
 //            outStream << user << " " << item << " " << 1 << std::endl;
 //        }else{
@@ -81,14 +87,14 @@ int main(int argc, char* argv[]){
         std::cout << "wrong arguments" << std::endl;
         return 1;
     }
-    Real learningRate = 0.0000001;
+//    Real learningRate = 0.0000001;
     std::string userFilename(argv[1]), relationFilename(argv[2]), messageFilename(argv[3]);
     std::string predFilename(argv[4]), outFilename(argv[5]), weightFilename(argv[6]);
     ConstructGraph graph;
     graph.insertData(userFilename, relationFilename, messageFilename, predFilename);
     std::cout << "user: " << graph.userNum << std::endl;
     std::cout << "item: " << graph.itemNum << std::endl;
-    std::ifstream weightStream("weight.txt"); 
+    std::ifstream weightStream(weightFilename); 
     for(auto k = 0u; k < 3; k++){
         for(auto l = 0u; l < WEIGHT_NUM; l++){
             weightStream >> graph.weightArr[k][l];

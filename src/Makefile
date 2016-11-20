@@ -15,5 +15,8 @@ main: $(OBJS) main.cpp
 pred: $(OBJS) pred.cpp
 	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(OBJS)  pred.cpp -o $@
 
+count: $(OBJS) count_candidate.cpp
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(OBJS)  count_candidate.cpp -o $@
+
 clean:
 	rm $(OBJS)

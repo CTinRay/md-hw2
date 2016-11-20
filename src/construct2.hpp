@@ -10,7 +10,7 @@
 
 #define MAX_USER 200000
 #define MAX_ITEM 250000
-#define MAX_CATEGORY 20000
+#define MAX_CATEGORY 17000
 #define WEIGHT_NUM 6u
 
 typedef std::pair<Index, Index> Pair;
@@ -25,7 +25,6 @@ class ConstructGraph{
     Index taskNum;
     std::vector<Index> taskUser;
     std::vector<Index> taskItem;
-    private:
     Index maxFriendNum;
     Index maxOwnItemNum;
     Index categoryNum;
@@ -34,6 +33,7 @@ class ConstructGraph{
     std::vector<std::set<Index> > itemOwner;
     std::vector<std::set<Index> > itemCategory;
     std::vector<std::vector<Real> > userCategory;
+    std::vector<std::set<Index> > category2userSet;
     //std::vector<Real> userPagerank;
     int categoryCount[MAX_CATEGORY];
 
