@@ -12,5 +12,9 @@ OBJS = factor-graph.o factor-functions.o gibbs-sampler.o construct.o gradient.o 
 main: $(OBJS) main.cpp
 	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(OBJS) $(LDLIBS) main.cpp -o $@
 
+predict: $(OBJS) predict.cpp
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(OBJS) $(LDLIBS) predict.cpp -o $@
+
+
 clean:
 	rm $(OBJS)
