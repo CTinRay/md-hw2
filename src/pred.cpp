@@ -89,9 +89,11 @@ int main(int argc, char* argv[]){
     std::cout << "user: " << graph.userNum << std::endl;
     std::cout << "item: " << graph.itemNum << std::endl;
     std::ifstream weightStream("weight.txt"); 
-    for(Index i = 0; i < WEIGHT_NUM; i++){
-        weightStream >> graph.weightArr[i];
-        std::cout << graph.weightArr[i] << std::endl;
+    for(auto k = 0u; k < 3; k++){
+        for(auto l = 0u; l < WEIGHT_NUM; l++){
+            weightStream >> graph.weightArr[k][l];
+            std::cout << graph.weightArr[k][l] << std::endl;
+        }
     }
     weightStream.close();
     predResult(graph, outFilename);

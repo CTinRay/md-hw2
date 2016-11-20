@@ -60,8 +60,11 @@ void predResult(ConstructGraph& graph, std::string& outFilename){
     }
     outStream.close();
     std::ofstream weightStream("weight.txt"); 
-    for(Index i = 0; i < WEIGHT_NUM; i++){
-        weightStream << graph.weightArr[i] << std::endl;
+    for(Index i = 0; i < 3; i++){
+        for(Index j = 0; j < WEIGHT_NUM; j++){
+            weightStream << graph.weightArr[i][j] << " ";
+        }
+        weightStream << std::endl;
     }
 }
 int main(int argc, char* argv[]){
@@ -80,7 +83,7 @@ int main(int argc, char* argv[]){
         unsigned int batchSize = (graph.itemNum-n < BATCH_SIZE)? graph.itemNum-n:BATCH_SIZE;
         Real totalProb = 0;
         for(Index i = n; i < n + batchSize; i++){
-            std::vector<Real> gredient(WEIGHT_NUM, 0);
+            std::vector<std::vector<Real>> gredient(3, std::vector<Real>(WEIGHT_NUM, 0));
             std::vector<Real> kMax(graph.itemLinkCount[i], 0);
             std::vector<Index> kMaxIndexArr(graph.itemLinkCount[i]);
             //std::vector<Real> userProb(graph.userNum);
@@ -94,7 +97,7 @@ int main(int argc, char* argv[]){
             }
             int assign;
             for(Index u = 0; u < graph.userNum; u++){
-                std::vector<Real> f = graph.getFeatures(u, i);
+                std::vector<std::vector<Real>> f = graph.getFeatures(u, i);
                 Real p = graph.FPotentialFunc(u, i, 1);
                 p = p * p;
                 if(vectorHas(kMaxIndexArr, u)){
@@ -102,16 +105,33 @@ int main(int argc, char* argv[]){
                 }else{
                     assign = -1;
                 }
-                for(auto k = 0u; k < WEIGHT_NUM; k++){
-                    gredient[k] += f[k] * (assign - (p - 1)/(p + 1));
+                for(auto k = 0u; k < f.size(); k++){
+                    for(auto l = 0u; l < f[k].size(); l++){
+                        //std::cout << "f " <<k << ' ' <<l<< ' :'<< std::setw(15) << std::left << f[k][l] << std::endl;
+                        gredient[k][l] += f[k][l] * (assign - (p - 1)/(p + 1));
+                    }
                 }
                 count++;
             }
 
-            for(auto k = 0u; k < WEIGHT_NUM; k++){
-                std::cout << std::setw(15) << std::left << graph.weightArr[k] << " " << std::setw(15) << std::left << gredient[k] * learningRate;
-                graph.weightArr[k] += gredient[k] * learningRate;
-                std::cout << " " << std::setw(15) << std::left << graph.weightArr[k] << std::endl;
+            for(auto k = 0u; k < 3; k++){
+                for(auto l = 0u; l < WEIGHT_NUM; l++){
+                    std::cout << std::setw(15) << std::left << graph.weightArr[k][l] << " " << std::setw(15) << std::left << gredient[k][l] * learningRate;
+                    graph.weightArr[k][l] += gredient[k][l] * learningRate;
+                    std::cout << " " << std::setw(15) << std::left << graph.weightArr[k][l] << std::endl;
+                }
+            }
+            for(auto l = 0u; l < WEIGHT_NUM; l++){
+                if(graph.weightArr[0][l] * graph.weightArr[1][l] < 0){
+                    Real d = graph.weightArr[0][l] + graph.weightArr[1][l];
+                    if(graph.weightArr[0][l] * d > 0){
+                        graph.weightArr[0][l] = d;
+                        graph.weightArr[1][l] = 0;
+                    }else{
+                        graph.weightArr[0][l] = 0;
+                        graph.weightArr[1][l] = d;
+                    }
+                }
             }
             Real prob = computeLogProb(graph, kMaxIndexArr, i);
             totalProb += prob;

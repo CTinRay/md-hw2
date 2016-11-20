@@ -14,13 +14,16 @@ ConstructGraph::ConstructGraph()
     :userNum(0),
      itemNum(0),
      taskNum(0),
+     maxFriendNum(0),
+     maxOwnItemNum(0),
      categoryNum(0),
      itemOwner(MAX_ITEM),
      itemCategory(MAX_ITEM){
          for(auto i = 0u; i < WEIGHT_NUM; i++){
-             weightArr[i] = 0.1;
+             weightArr[0][i] = 0.1;
+             weightArr[1][i] = 0.0;
          }
-         weightArr[WEIGHT_NUM-2] = 0.01;
+         //weightArr[2][0] = 0.01;
      };
 
 int ConstructGraph::BFS(Index start, const int maxDistance, Index item) {
@@ -106,6 +109,9 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile,
         //userRelation[userIndex2].push_back(userIndex1);
     }
     relationList.close();
+    for(Index i = 0; i < userNum; i++){
+        maxFriendNum = (userRelation[i].size() > maxFriendNum)? userRelation[i].size():maxFriendNum;
+    }
 
     /* handle message.txt */
     std::ifstream messageList(messageFile);
@@ -135,6 +141,20 @@ void ConstructGraph::insertData(std::string userFile, std::string relationFile,
         if ( itemCategorySet.find( Pair(itemIndex, categoryIndex) ) == itemCategorySet.end() ) {
             categoryCount[categoryIndex]++; 
             itemCategorySet.insert( Pair(itemIndex, categoryIndex) );
+        }
+    }
+    for(Index u = 0; u < userNum; u++){
+        maxOwnItemNum = (userItem[u].size() > maxOwnItemNum)? userItem[u].size():maxOwnItemNum;
+    }
+    for(Index u = 0; u < userNum; u++){
+        Real max = 0;
+        for(Index c = 0; c < categoryNum; c++){
+            max = (userCategory[u][c] > max)? userCategory[u][c]:max; 
+        }
+        if(max != 0){
+            for(Index c = 0; c < categoryNum; c++){
+                userCategory[u][c] /= max; 
+            }
         }
     }
     itemNum++;
@@ -308,20 +328,31 @@ void ConstructGraph::constructGraph2(){
     }
 }*/
 Real ConstructGraph::FPotentialFunc(Index user, Index item, int assign){
-    std::vector<Real> subPotentialArr = getFeatures(user, item);
+    std::vector<std::vector<Real>> FeatureArr = getFeatures(user, item);
     Real sum = 0;
-    for(auto i = 0u; i < WEIGHT_NUM; i++){
-        //std::cout << subPotentialArr[i] << std::endl;
-        sum += weightArr[i] * subPotentialArr[i] * assign;
+    for(auto i = 0u; i < FeatureArr.size(); i++){
+        for(auto j = 0u; j < FeatureArr[i].size(); j++){
+            //std::cout << subPotentialArr[i] << std::endl;
+            sum += weightArr[i][j] * FeatureArr[i][j] * assign;
+        }
     }
     return EXP(sum);
 }
-std::vector<Real> ConstructGraph::getFeatures(Index user, Index item){
-    std::vector<Real> subPotentialArr = {ItemOwnership(user, item), ownerIsFriend(user, item), friendNum(user),
-                                         userCategorySimilarity(user, item), categoryPopular(item), (Real)itemLinkCount[item]};
-    return subPotentialArr;
+std::vector<std::vector<Real>> ConstructGraph::getFeatures(Index user, Index item){
+    std::vector<Real> featureArr = {ItemOwnership(user, item), ownerIsFriend(user, item), normalizeFriendNum(user), normalizeNumOwnItem(user),
+                                    userCategorySimilarity(user, item), (Real)itemLinkCount[item], normalizeCategoryPopular(item)};
+    std::vector<std::vector<Real>> potentialArr(3);
+    for(Index i = 0; i < 6; i++){
+        potentialArr[0].push_back(featureArr[i]);
+        potentialArr[1].push_back((featureArr[i] == 0)? -1:0);
+    }
+    potentialArr[2].push_back(featureArr[6]);
+    return potentialArr;
 }
 
+Real ConstructGraph::normalizeNumOwnItem(Index user){
+    return userItem[user].size() / (Real)maxOwnItemNum;
+}
 Real ConstructGraph::ItemOwnership(Index user, Index item){
     if(itemOwner[item].find(user) != itemOwner[item].end()){
         return 1.0;
@@ -337,20 +368,20 @@ Real ConstructGraph::ownerIsFriend(Index user, Index item){
     }
     return 0.0;
 }
-Real ConstructGraph::friendNum(Index user){
-    return userRelation[user].size();
+Real ConstructGraph::normalizeFriendNum(Index user){
+    return userRelation[user].size() / (Real)maxFriendNum;
 }
 Real ConstructGraph::userCategorySimilarity(Index user, Index item){
-    double max = 0.0;
+    Real max = 0.0;
     for(auto c: itemCategory[item]){
         max = (userCategory[user][c] > max)? userCategory[user][c]:max;
     }
     return max;
 }
-Real ConstructGraph::categoryPopular(Index item){
+Real ConstructGraph::normalizeCategoryPopular(Index item){
     Real sum = 0;
     for(auto c: itemCategory[item]){
         sum += categoryCount[c];
     }
-    return sum / categoryNum;
+    return sum / itemNum;
 }

@@ -21,17 +21,19 @@ class ConstructGraph{
     Index userNum;
     Index itemNum;
     int itemLinkCount[MAX_ITEM];
-    Real weightArr[WEIGHT_NUM];
+    Real weightArr[3][WEIGHT_NUM];
     Index taskNum;
     std::vector<Index> taskUser;
     std::vector<Index> taskItem;
     private:
+    Index maxFriendNum;
+    Index maxOwnItemNum;
     Index categoryNum;
     std::vector<std::vector<Index> > userRelation;
     std::vector<std::set<Index> > userItem;
     std::vector<std::set<Index> > itemOwner;
     std::vector<std::set<Index> > itemCategory;
-    std::vector<std::vector<double> > userCategory;
+    std::vector<std::vector<Real> > userCategory;
     //std::vector<Real> userPagerank;
     int categoryCount[MAX_CATEGORY];
 
@@ -49,12 +51,13 @@ class ConstructGraph{
     // void constructGraph(FactorGraph& graph, const int maxDistance);
     void constructGraph2();
     Real FPotentialFunc(Index user, Index item, int assign);
-    std::vector<Real> getFeatures(Index user, Index item);
+    std::vector<std::vector<Real>> getFeatures(Index user, Index item);
     Real ItemOwnership(Index user, Index item);
     Real ownerIsFriend(Index user, Index item);
-    Real friendNum(Index user);
+    Real normalizeFriendNum(Index user);
     Real userCategorySimilarity(Index user, Index item);
-    Real categoryPopular(Index item);
+    Real normalizeNumOwnItem(Index user);
+    Real normalizeCategoryPopular(Index item);
 };
 
 #endif
